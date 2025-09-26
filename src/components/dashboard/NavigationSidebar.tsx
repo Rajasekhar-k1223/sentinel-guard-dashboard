@@ -10,7 +10,15 @@ import {
   Target,
   Network,
   FileText,
-  TrendingUp
+  TrendingUp,
+  Monitor,
+  FileCheck,
+  Package,
+  Bug,
+  Zap,
+  Cloud,
+  Brain,
+  Wifi
 } from 'lucide-react';
 import {
   Sidebar,
@@ -32,19 +40,29 @@ const navigationItems = [
     icon: TrendingUp,
   },
   {
-    title: "Alerts & Threats",
+    title: "Agent Management",
+    url: "/agents",
+    icon: Monitor,
+  },
+  {
+    title: "Alerts & SIEM",
     url: "/alerts",
     icon: AlertTriangle,
   },
   {
-    title: "Endpoint Security",
-    url: "/endpoints",
-    icon: Shield,
+    title: "File Integrity",
+    url: "/fim",
+    icon: FileCheck,
   },
   {
-    title: "Infrastructure",
-    url: "/infrastructure",
-    icon: Server,
+    title: "YARA Analysis",
+    url: "/yara",
+    icon: Search,
+  },
+  {
+    title: "Sandbox",
+    url: "/sandbox",
+    icon: Package,
   },
   {
     title: "Network Security",
@@ -52,19 +70,39 @@ const navigationItems = [
     icon: Network,
   },
   {
-    title: "SIEM Logs",
-    url: "/siem",
+    title: "Log Analysis",
+    url: "/logs",
     icon: FileText,
   },
   {
-    title: "Threat Hunting",
-    url: "/hunting",
-    icon: Target,
+    title: "Vulnerabilities",
+    url: "/vulnerabilities",
+    icon: Bug,
   },
   {
-    title: "Search",
-    url: "/search",
-    icon: Search,
+    title: "SOAR Automation",
+    url: "/soar",
+    icon: Zap,
+  },
+  {
+    title: "Cloud Security",
+    url: "/cloud",
+    icon: Cloud,
+  },
+  {
+    title: "AI Analysis",
+    url: "/ai",
+    icon: Brain,
+  },
+  {
+    title: "Compliance",
+    url: "/compliance",
+    icon: Shield,
+  },
+  {
+    title: "Agentless",
+    url: "/agentless",
+    icon: Wifi,
   },
 ];
 

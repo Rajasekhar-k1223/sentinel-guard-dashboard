@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { NavigationSidebar } from "@/components/dashboard/NavigationSidebar";
 import Dashboard from "./pages/Dashboard";
+import AgentManagement from "./pages/AgentManagement";
+import FileIntegrityMonitoring from "./pages/FileIntegrityMonitoring";
+import YaraAnalysis from "./pages/YaraAnalysis";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +25,9 @@ const App = () => (
             <main className="flex-1 overflow-auto">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/agents" element={<AgentManagement />} />
+                <Route path="/fim" element={<FileIntegrityMonitoring />} />
+                <Route path="/yara" element={<YaraAnalysis />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
