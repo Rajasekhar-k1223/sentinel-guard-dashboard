@@ -9,6 +9,17 @@ import Dashboard from "./pages/Dashboard";
 import AgentManagement from "./pages/AgentManagement";
 import FileIntegrityMonitoring from "./pages/FileIntegrityMonitoring";
 import YaraAnalysis from "./pages/YaraAnalysis";
+import AlertsSIEM from "./pages/AlertsSIEM";
+import Sandbox from "./pages/Sandbox";
+import NetworkSecurity from "./pages/NetworkSecurity";
+import LogAnalysis from "./pages/LogAnalysis";
+import Vulnerabilities from "./pages/Vulnerabilities";
+import SOARAutomation from "./pages/SOARAutomation";
+import CloudSecurity from "./pages/CloudSecurity";
+import AIAnalysis from "./pages/AIAnalysis";
+import Compliance from "./pages/Compliance";
+import Agentless from "./pages/Agentless";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,8 +37,19 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/agents" element={<AgentManagement />} />
+                <Route path="/alerts" element={<AlertsSIEM />} />
                 <Route path="/fim" element={<FileIntegrityMonitoring />} />
                 <Route path="/yara" element={<YaraAnalysis />} />
+                <Route path="/sandbox" element={<Sandbox />} />
+                <Route path="/network" element={<NetworkSecurity />} />
+                <Route path="/logs" element={<LogAnalysis />} />
+                <Route path="/vulnerabilities" element={<Vulnerabilities />} />
+                <Route path="/soar" element={<SOARAutomation />} />
+                <Route path="/cloud" element={<CloudSecurity />} />
+                <Route path="/ai" element={<AIAnalysis />} />
+                <Route path="/compliance" element={<Compliance />} />
+                <Route path="/agentless" element={<Agentless />} />
+                <Route path="/settings" element={<Settings />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
