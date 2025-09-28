@@ -19,6 +19,9 @@ import Vulnerabilities from "./pages/Vulnerabilities";
 import SOARAutomation from "./pages/SOARAutomation";
 import CloudSecurity from "./pages/CloudSecurity";
 import AIAnalysis from "./pages/AIAnalysis";
+import TrainModel from "./pages/TrainModel";
+import ViewInsight from "./pages/ViewInsight";
+import ViewModel from "./pages/ViewModel";
 import Compliance from "./pages/Compliance";
 import Agentless from "./pages/Agentless";
 import Settings from "./pages/Settings";
@@ -62,6 +65,9 @@ const App = () => (
                         <Route path="/soar" element={<SOARAutomation />} />
                         <Route path="/cloud" element={<CloudSecurity />} />
                         <Route path="/ai" element={<AIAnalysis />} />
+                        <Route path="/train-model" element={<TrainModel />} />
+                        <Route path="/view-insight/:id" element={<ViewInsight />} />
+                        <Route path="/view-model/:id" element={<ViewModel />} />
                         <Route path="/compliance" element={<Compliance />} />
                         <Route path="/agentless" element={<Agentless />} />
                         <Route path="/settings" element={<Settings />} />

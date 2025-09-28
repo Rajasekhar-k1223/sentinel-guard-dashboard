@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Brain, TrendingUp, AlertTriangle, Eye, Zap, Activity } from 'lucide-react';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
@@ -129,6 +130,7 @@ const aiStats: AIStats = {
 };
 
 export default function AIAnalysis() {
+  const navigate = useNavigate();
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
 
@@ -209,7 +211,7 @@ export default function AIAnalysis() {
           <h1 className="text-3xl font-bold text-foreground">AI Analysis</h1>
           <p className="text-muted-foreground">AI-powered security insights and threat detection</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => navigate('/train-model')}>
           <Brain className="h-4 w-4" />
           Train Model
         </Button>
@@ -309,7 +311,7 @@ export default function AIAnalysis() {
                   
                   {getModelStatusBadge(model.status)}
                   
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => navigate(`/view-model/${model.id}`)}>
                     <Eye className="h-4 w-4" />
                   </Button>
                 </div>
@@ -383,7 +385,7 @@ export default function AIAnalysis() {
                   {getSeverityBadge(insight.severity)}
                   {getStatusBadge(insight.status)}
                   
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => navigate(`/view-insight/${insight.id}`)}>
                     <Eye className="h-4 w-4" />
                   </Button>
                 </div>
