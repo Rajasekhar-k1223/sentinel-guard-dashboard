@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Lock, Eye, Zap, Cloud, Bot } from "lucide-react";
 import { Link } from "react-router-dom";
-import heroBanner from "@/assets/hero-banner.jpg";
+import heroBanner from "@/assets/hero-banner-new.jpg";
+import sentinelLogo from "@/assets/sentinel-logo-new.png";
 
 const Welcome = () => {
   const features = [
@@ -51,8 +52,8 @@ const Welcome = () => {
         <div className="relative container mx-auto px-4 py-20 lg:py-32">
           <div className="max-w-4xl">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-xl bg-primary/10 backdrop-blur-sm border border-primary/20">
-                <Shield className="h-8 w-8 text-primary" />
+              <div className="p-2 rounded-xl bg-primary/10 backdrop-blur-sm border border-primary/20">
+                <img src={sentinelLogo} alt="SentinelAI Logo" className="h-10 w-10" />
               </div>
               <span className="text-lg font-semibold text-primary">SentinelAI</span>
             </div>
