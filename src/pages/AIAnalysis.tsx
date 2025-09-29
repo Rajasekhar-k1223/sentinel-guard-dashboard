@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import ViewInsightDialog from '@/components/dialogs/ViewInsightDialog';
+import ViewModelDialog from '@/components/dialogs/ViewModelDialog';
 
 interface AIInsight {
   id: string;
@@ -131,8 +134,15 @@ const aiStats: AIStats = {
 
 export default function AIAnalysis() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
+  const [selectedInsight, setSelectedInsight] = useState<AIInsight | null>(null);
+  const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
+  const [isInsightDialogOpen, setIsInsightDialogOpen] = useState(false);
+  const [isModelDialogOpen, setIsModelDialogOpen] = useState(false);
+  const [insights, setInsights] = useState<AIInsight[]>(mockAIInsights);
+  const [models, setModels] = useState<AIModel[]>(mockAIModels);
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -198,7 +208,49 @@ export default function AIAnalysis() {
     );
   };
 
-  const filteredInsights = mockAIInsights.filter(insight => {
+  const handleInsightStatusChange = (id: string, status: string) => {
+    setInsights(prev => prev.map(insight => 
+      insight.id === id ? { ...insight, status: status as AIInsight['status'] } : insight
+    ));
+    toast({
+      title: "Status Updated",
+      description: `Insight status changed to ${status}`,
+    });
+  };
+
+  const handleModelAction = (id: string, action: string) => {
+    setModels(prev => prev.map(model => {
+      if (model.id === id) {
+        switch (action) {
+          case 'pause':
+            return { ...model, status: 'inactive' as AIModel['status'] };
+          case 'activate':
+            return { ...model, status: 'active' as AIModel['status'] };
+          case 'retrain':
+            return { ...model, status: 'training' as AIModel['status'] };
+          default:
+            return model;
+        }
+      }
+      return model;
+    }));
+    toast({
+      title: "Model Action",
+      description: `Model ${action} initiated successfully`,
+    });
+  };
+
+  const handleViewInsight = (insight: AIInsight) => {
+    setSelectedInsight(insight);
+    setIsInsightDialogOpen(true);
+  };
+
+  const handleViewModel = (model: AIModel) => {
+    setSelectedModel(model);
+    setIsModelDialogOpen(true);
+  };
+
+  const filteredInsights = insights.filter(insight => {
     const matchesType = selectedType === 'all' || insight.type === selectedType;
     const matchesSeverity = selectedSeverity === 'all' || insight.severity === selectedSeverity;
     return matchesType && matchesSeverity;
@@ -283,7 +335,7 @@ export default function AIAnalysis() {
         </SecurityCardHeader>
         <SecurityCardContent>
           <div className="space-y-4">
-            {mockAIModels.map((model) => (
+            {models.map((model) => (
               <div
                 key={model.id}
                 className="flex items-center justify-between p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-colors"
@@ -311,7 +363,7 @@ export default function AIAnalysis() {
                   
                   {getModelStatusBadge(model.status)}
                   
-                  <Button variant="ghost" size="sm" onClick={() => navigate(`/view-model/${model.id}`)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleViewModel(model)}>
                     <Eye className="h-4 w-4" />
                   </Button>
                 </div>
@@ -385,7 +437,7 @@ export default function AIAnalysis() {
                   {getSeverityBadge(insight.severity)}
                   {getStatusBadge(insight.status)}
                   
-                  <Button variant="ghost" size="sm" onClick={() => navigate(`/view-insight/${insight.id}`)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleViewInsight(insight)}>
                     <Eye className="h-4 w-4" />
                   </Button>
                 </div>
@@ -394,6 +446,21 @@ export default function AIAnalysis() {
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Dialogs */}
+      <ViewInsightDialog
+        insight={selectedInsight}
+        open={isInsightDialogOpen}
+        onOpenChange={setIsInsightDialogOpen}
+        onStatusChange={handleInsightStatusChange}
+      />
+      
+      <ViewModelDialog
+        model={selectedModel}
+        open={isModelDialogOpen}
+        onOpenChange={setIsModelDialogOpen}
+        onModelAction={handleModelAction}
+      />
     </div>
   );
 }
