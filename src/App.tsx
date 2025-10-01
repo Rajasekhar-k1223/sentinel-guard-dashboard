@@ -9,6 +9,10 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import AgentManagement from "./pages/AgentManagement";
+import AgentDetail from "./pages/AgentDetail";
+import AddAgent from "./pages/AddAgent";
+import AgentlessDetail from "./pages/AgentlessDetail";
+import AddAgentless from "./pages/AddAgentless";
 import FileIntegrityMonitoring from "./pages/FileIntegrityMonitoring";
 import YaraAnalysis from "./pages/YaraAnalysis";
 import AlertsSIEM from "./pages/AlertsSIEM";
@@ -55,6 +59,10 @@ const App = () => (
                         <Route path="/" element={<Dashboard />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/agents" element={<AgentManagement />} />
+                        <Route path="/agent/:id" element={<AgentDetail />} />
+                        <Route path="/add-agent" element={<AddAgent />} />
+                        <Route path="/agentless/:id" element={<AgentlessDetail />} />
+                        <Route path="/add-agentless" element={<AddAgentless />} />
                         <Route path="/alerts" element={<AlertsSIEM />} />
                         <Route path="/fim" element={<FileIntegrityMonitoring />} />
                         <Route path="/yara" element={<YaraAnalysis />} />

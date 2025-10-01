@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Monitor, Plus, MoreHorizontal, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Monitor, Plus, MoreHorizontal, CheckCircle, AlertCircle, XCircle, Eye } from 'lucide-react';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +61,7 @@ const mockAgents: Agent[] = [
 ];
 
 export default function AgentManagement() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
@@ -104,7 +106,7 @@ export default function AgentManagement() {
           <h1 className="text-3xl font-bold text-foreground">Agent Management</h1>
           <p className="text-muted-foreground">Monitor and manage endpoint agents</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => navigate('/add-agent')}>
           <Plus className="h-4 w-4" />
           Deploy Agent
         </Button>
@@ -232,6 +234,14 @@ export default function AgentManagement() {
                   </div>
                   
                   {getStatusBadge(agent.status)}
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => navigate(`/agent/${agent.id}`)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
                   
                   <Button variant="ghost" size="icon">
                     <MoreHorizontal className="h-4 w-4" />

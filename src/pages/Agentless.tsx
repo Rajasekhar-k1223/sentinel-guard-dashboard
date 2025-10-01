@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Wifi, Server, Plus, Settings, CheckCircle, AlertTriangle, XCircle, Key } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Wifi, Server, Plus, Settings, CheckCircle, AlertTriangle, XCircle, Key, Eye } from 'lucide-react';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -138,6 +139,7 @@ const mockScanResults: ScanResult[] = [
 ];
 
 export default function Agentless() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOS, setSelectedOS] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -218,7 +220,7 @@ export default function Agentless() {
           <h1 className="text-3xl font-bold text-foreground">Agentless Management</h1>
           <p className="text-muted-foreground">Remote security scanning without installed agents</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => navigate('/add-agentless')}>
           <Plus className="h-4 w-4" />
           Add Target
         </Button>
@@ -358,6 +360,13 @@ export default function Agentless() {
                   {getStatusBadge(target.status)}
                   
                   <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => navigate(`/agentless/${target.id}`)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="sm">
                       <Key className="h-4 w-4" />
                     </Button>
