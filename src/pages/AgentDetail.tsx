@@ -1,8 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Monitor, Activity, AlertTriangle, CheckCircle, XCircle, Download, Trash2 } from 'lucide-react';
+import { ArrowLeft, Monitor, Activity, AlertTriangle, CheckCircle, XCircle, Download, Trash2, HardDrive, Network } from 'lucide-react';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AgentDetail() {
   const { id } = useParams();
@@ -32,6 +33,47 @@ export default function AgentDetail() {
     { id: 2, time: '15 minutes ago', type: 'Warning', message: 'High CPU usage detected', severity: 'medium' },
     { id: 3, time: '1 hour ago', type: 'Info', message: 'Security scan completed', severity: 'low' },
     { id: 4, time: '2 hours ago', type: 'Critical', message: 'Suspicious process detected', severity: 'high' },
+  ];
+
+  // Mock time-series data for graphs
+  const cpuData = [
+    { time: '00:00', value: 15 },
+    { time: '04:00', value: 22 },
+    { time: '08:00', value: 45 },
+    { time: '12:00', value: 38 },
+    { time: '16:00', value: 52 },
+    { time: '20:00', value: 24 },
+    { time: '23:59', value: 24 },
+  ];
+
+  const memoryData = [
+    { time: '00:00', value: 55 },
+    { time: '04:00', value: 58 },
+    { time: '08:00', value: 72 },
+    { time: '12:00', value: 68 },
+    { time: '16:00', value: 75 },
+    { time: '20:00', value: 65 },
+    { time: '23:59', value: 67 },
+  ];
+
+  const diskData = [
+    { time: '00:00', value: 42 },
+    { time: '04:00', value: 43 },
+    { time: '08:00', value: 44 },
+    { time: '12:00', value: 44 },
+    { time: '16:00', value: 45 },
+    { time: '20:00', value: 45 },
+    { time: '23:59', value: 45 },
+  ];
+
+  const networkData = [
+    { time: '00:00', inbound: 120, outbound: 80 },
+    { time: '04:00', inbound: 150, outbound: 95 },
+    { time: '08:00', inbound: 280, outbound: 180 },
+    { time: '12:00', inbound: 320, outbound: 220 },
+    { time: '16:00', inbound: 290, outbound: 190 },
+    { time: '20:00', inbound: 180, outbound: 120 },
+    { time: '23:59', inbound: 140, outbound: 90 },
   ];
 
   const getStatusBadge = () => {
@@ -204,6 +246,202 @@ export default function AgentDetail() {
                 </div>
               ))}
             </div>
+          </SecurityCardContent>
+        </SecurityCard>
+      </div>
+
+      {/* Performance Metrics Graphs */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* CPU Usage Graph */}
+        <SecurityCard>
+          <SecurityCardHeader>
+            <SecurityCardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              CPU Usage (24h)
+            </SecurityCardTitle>
+          </SecurityCardHeader>
+          <SecurityCardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={cpuData}>
+                <defs>
+                  <linearGradient id="cpuGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  dataKey="time" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                  formatter={(value: number) => [`${value}%`, 'CPU']}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  fill="url(#cpuGradient)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </SecurityCardContent>
+        </SecurityCard>
+
+        {/* Memory Usage Graph */}
+        <SecurityCard>
+          <SecurityCardHeader>
+            <SecurityCardTitle className="flex items-center gap-2">
+              <Monitor className="h-5 w-5 text-info" />
+              Memory Usage (24h)
+            </SecurityCardTitle>
+          </SecurityCardHeader>
+          <SecurityCardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={memoryData}>
+                <defs>
+                  <linearGradient id="memoryGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--info))" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(var(--info))" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  dataKey="time" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                  formatter={(value: number) => [`${value}%`, 'Memory']}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="hsl(var(--info))" 
+                  strokeWidth={2}
+                  fill="url(#memoryGradient)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </SecurityCardContent>
+        </SecurityCard>
+
+        {/* Disk Usage Graph */}
+        <SecurityCard>
+          <SecurityCardHeader>
+            <SecurityCardTitle className="flex items-center gap-2">
+              <HardDrive className="h-5 w-5 text-warning" />
+              Disk Usage (24h)
+            </SecurityCardTitle>
+          </SecurityCardHeader>
+          <SecurityCardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={diskData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  dataKey="time" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                  formatter={(value: number) => [`${value}%`, 'Disk']}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="hsl(var(--warning))" 
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--warning))' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </SecurityCardContent>
+        </SecurityCard>
+
+        {/* Network Traffic Graph */}
+        <SecurityCard>
+          <SecurityCardHeader>
+            <SecurityCardTitle className="flex items-center gap-2">
+              <Network className="h-5 w-5 text-success" />
+              Network Traffic (24h)
+            </SecurityCardTitle>
+          </SecurityCardHeader>
+          <SecurityCardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={networkData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  dataKey="time" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickFormatter={(value) => `${value} MB/s`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                  formatter={(value: number) => [`${value} MB/s`]}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="inbound" 
+                  stroke="hsl(var(--success))" 
+                  strokeWidth={2}
+                  name="Inbound"
+                  dot={{ fill: 'hsl(var(--success))' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="outbound" 
+                  stroke="hsl(var(--info))" 
+                  strokeWidth={2}
+                  name="Outbound"
+                  dot={{ fill: 'hsl(var(--info))' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </SecurityCardContent>
         </SecurityCard>
       </div>
