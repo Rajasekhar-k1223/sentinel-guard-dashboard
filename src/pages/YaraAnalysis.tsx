@@ -101,11 +101,11 @@ export default function YaraAnalysis() {
           <p className="text-muted-foreground">Malware detection and pattern matching</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => window.location.href = '/yara/upload'}>
             <Upload className="h-4 w-4" />
-            Upload Rules
+            Upload File
           </Button>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => window.location.href = '/yara/create-rule'}>
             <Plus className="h-4 w-4" />
             Create Rule
           </Button>

@@ -117,7 +117,7 @@ export default function AlertsSIEM() {
           <h1 className="text-3xl font-bold text-foreground">Alerts & SIEM</h1>
           <p className="text-muted-foreground">Security Information and Event Management</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => window.location.href = '/alerts/create-rule'}>
           <Shield className="h-4 w-4" />
           Create Rule
         </Button>
@@ -252,7 +252,7 @@ export default function AlertsSIEM() {
                 <div className="flex items-center gap-3">
                   {getSeverityBadge(alert.severity)}
                   {getStatusBadge(alert.status)}
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => window.location.href = `/alerts/${alert.id}`}>
                     <Eye className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="sm">

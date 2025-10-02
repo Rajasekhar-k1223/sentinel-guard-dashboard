@@ -26,6 +26,16 @@ import AIAnalysis from "./pages/AIAnalysis";
 import TrainModel from "./pages/TrainModel";
 import ViewInsight from "./pages/ViewInsight";
 import ViewModel from "./pages/ViewModel";
+import CreateRule from "./pages/CreateRule";
+import ViewSecurityAlert from "./pages/ViewSecurityAlert";
+import CreateBaseline from "./pages/CreateBaseline";
+import FileChangeDetail from "./pages/FileChangeDetail";
+import CreateYaraRule from "./pages/CreateYaraRule";
+import UploadYaraFile from "./pages/UploadYaraFile";
+import YaraMatchResult from "./pages/YaraMatchResult";
+import SandboxDetail from "./pages/SandboxDetail";
+import CreateFirewallRule from "./pages/CreateFirewallRule";
+import NetworkEventDetail from "./pages/NetworkEventDetail";
 import Compliance from "./pages/Compliance";
 import Agentless from "./pages/Agentless";
 import Settings from "./pages/Settings";
@@ -79,6 +89,16 @@ const App = () => (
                         <Route path="/compliance" element={<Compliance />} />
                         <Route path="/agentless" element={<Agentless />} />
                         <Route path="/settings" element={<Settings />} />
+                        <Route path="/alerts/create-rule" element={<CreateRule />} />
+                        <Route path="/alerts/:id" element={<ViewSecurityAlert />} />
+                        <Route path="/file-integrity/create-baseline" element={<CreateBaseline />} />
+                        <Route path="/file-integrity/:id" element={<FileChangeDetail />} />
+                        <Route path="/yara/create-rule" element={<CreateYaraRule />} />
+                        <Route path="/yara/upload" element={<UploadYaraFile />} />
+                        <Route path="/yara/:id" element={<YaraMatchResult />} />
+                        <Route path="/sandbox/:id" element={<SandboxDetail />} />
+                        <Route path="/network-security/create-rule" element={<CreateFirewallRule />} />
+                        <Route path="/network-security/:id" element={<NetworkEventDetail />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </main>

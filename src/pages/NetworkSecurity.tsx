@@ -125,7 +125,7 @@ export default function NetworkSecurity() {
           <h1 className="text-3xl font-bold text-foreground">Network Security</h1>
           <p className="text-muted-foreground">Network traffic monitoring and intrusion detection</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => window.location.href = '/network-security/create-rule'}>
           <Shield className="h-4 w-4" />
           Create Firewall Rule
         </Button>

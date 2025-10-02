@@ -113,7 +113,7 @@ export default function FileIntegrityMonitoring() {
           <h1 className="text-3xl font-bold text-foreground">File Integrity Monitoring</h1>
           <p className="text-muted-foreground">Monitor and detect file system changes</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => window.location.href = '/file-integrity/create-baseline'}>
           <Search className="h-4 w-4" />
           Create Baseline
         </Button>
