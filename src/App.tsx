@@ -36,6 +36,7 @@ import YaraMatchResult from "./pages/YaraMatchResult";
 import SandboxDetail from "./pages/SandboxDetail";
 import CreateFirewallRule from "./pages/CreateFirewallRule";
 import NetworkEventDetail from "./pages/NetworkEventDetail";
+import NetworkScanning from "./pages/NetworkScanning";
 import Compliance from "./pages/Compliance";
 import Agentless from "./pages/Agentless";
 import Settings from "./pages/Settings";
@@ -99,6 +100,8 @@ const App = () => (
                         <Route path="/sandbox/:id" element={<SandboxDetail />} />
                         <Route path="/network-security/create-rule" element={<CreateFirewallRule />} />
                         <Route path="/network-security/:id" element={<NetworkEventDetail />} />
+                        <Route path="/network-scanning" element={<NetworkScanning />} />
+                        <Route path="/network-scanning/:id" element={<NetworkEventDetail />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </main>
