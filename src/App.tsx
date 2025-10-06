@@ -43,6 +43,12 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Welcome from "./pages/Welcome";
 import Login from "./pages/Login";
+import UserManagement from "./pages/UserManagement";
+import Notifications from "./pages/Notifications";
+import AuditLogs from "./pages/AuditLogs";
+import Reports from "./pages/Reports";
+import IncidentResponse from "./pages/IncidentResponse";
+import ThreatIntelligence from "./pages/ThreatIntelligence";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +108,12 @@ const App = () => (
                         <Route path="/network-security/:id" element={<NetworkEventDetail />} />
                         <Route path="/network-scanning" element={<NetworkScanning />} />
                         <Route path="/network-scanning/:id" element={<NetworkEventDetail />} />
+                        <Route path="/users" element={<UserManagement />} />
+                        <Route path="/notifications" element={<Notifications />} />
+                        <Route path="/audit-logs" element={<AuditLogs />} />
+                        <Route path="/reports" element={<Reports />} />
+                        <Route path="/incidents" element={<IncidentResponse />} />
+                        <Route path="/threat-intelligence" element={<ThreatIntelligence />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </main>

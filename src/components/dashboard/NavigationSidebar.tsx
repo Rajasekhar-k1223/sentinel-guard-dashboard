@@ -22,7 +22,11 @@ import {
   Brain,
   Wifi,
   LogOut,
-  User
+  User,
+  Bell,
+  Users,
+  BookOpen,
+  BarChart
 } from 'lucide-react';
 import {
   Sidebar,
