@@ -49,6 +49,7 @@ import AuditLogs from "./pages/AuditLogs";
 import Reports from "./pages/Reports";
 import IncidentResponse from "./pages/IncidentResponse";
 import ThreatIntelligence from "./pages/ThreatIntelligence";
+import AgentCommunication from "./pages/AgentCommunication";
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,7 @@ const App = () => (
                         <Route path="/reports" element={<Reports />} />
                         <Route path="/incidents" element={<IncidentResponse />} />
                         <Route path="/threat-intelligence" element={<ThreatIntelligence />} />
+                        <Route path="/agent-communication" element={<AgentCommunication />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </main>

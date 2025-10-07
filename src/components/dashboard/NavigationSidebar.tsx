@@ -26,7 +26,10 @@ import {
   Bell,
   Users,
   BookOpen,
-  BarChart
+  BarChart,
+  ClipboardList,
+  FileWarning,
+  Database
 } from 'lucide-react';
 import {
   Sidebar,
@@ -113,9 +116,39 @@ const navigationItems = [
     url: "/agentless",
     icon: Wifi,
   },
+  {
+    title: "Threat Intelligence",
+    url: "/threat-intelligence",
+    icon: Database,
+  },
+  {
+    title: "Incidents",
+    url: "/incidents",
+    icon: ClipboardList,
+  },
+  {
+    title: "Reports",
+    url: "/reports",
+    icon: BarChart,
+  },
+  {
+    title: "Audit Logs",
+    url: "/audit-logs",
+    icon: FileWarning,
+  },
 ];
 
 const settingsItems = [
+  {
+    title: "User Management",
+    url: "/users",
+    icon: Users,
+  },
+  {
+    title: "Notifications",
+    url: "/notifications",
+    icon: Bell,
+  },
   {
     title: "Settings",
     url: "/settings",
