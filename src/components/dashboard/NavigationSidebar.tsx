@@ -29,7 +29,8 @@ import {
   BarChart,
   ClipboardList,
   FileWarning,
-  Database
+  Database,
+  MessageCircle
 } from 'lucide-react';
 import {
   Sidebar,
@@ -55,6 +56,11 @@ const navigationItems = [
     title: "Agent Management",
     url: "/agents",
     icon: Monitor,
+  },
+  {
+    title: "Agent Communication",
+    url: "/agent-communication",
+    icon: MessageCircle,
   },
   {
     title: "Alerts & SIEM",
