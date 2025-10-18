@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { Bug, AlertTriangle, Shield, Search, Filter, ExternalLink } from 'lucide-react';
+import { Bug, AlertTriangle, Shield, Search, Filter, ExternalLink, Play, CheckCircle, Download, Settings, Database, Server, Cloud } from 'lucide-react';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from '@/hooks/use-toast';
 
 interface Vulnerability {
   id: string;
@@ -95,6 +99,9 @@ export default function Vulnerabilities() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [scanDialogOpen, setScanDialogOpen] = useState(false);
+  const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
+  const [scanType, setScanType] = useState('full');
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -140,6 +147,53 @@ export default function Vulnerabilities() {
     );
   };
 
+  const scanTargets = [
+    { id: 'web-servers', label: 'Web Servers', icon: Server, count: 12 },
+    { id: 'databases', label: 'Database Servers', icon: Database, count: 8 },
+    { id: 'cloud', label: 'Cloud Infrastructure', icon: Cloud, count: 25 },
+    { id: 'endpoints', label: 'Endpoints', icon: Server, count: 156 }
+  ];
+
+  const handleTargetToggle = (targetId: string) => {
+    setSelectedTargets(prev => 
+      prev.includes(targetId) 
+        ? prev.filter(id => id !== targetId)
+        : [...prev, targetId]
+    );
+  };
+
+  const handleStartScan = () => {
+    if (selectedTargets.length === 0) {
+      toast({
+        title: "No targets selected",
+        description: "Please select at least one target to scan",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Scan Started",
+      description: `Running ${scanType} vulnerability scan on ${selectedTargets.length} target(s)`
+    });
+    setScanDialogOpen(false);
+    setSelectedTargets([]);
+  };
+
+  const handlePatchVulnerability = (vuln: Vulnerability) => {
+    toast({
+      title: "Patch Process Started",
+      description: `Initiating patch for ${vuln.cve} on ${vuln.affectedAssets.length} asset(s)`,
+    });
+  };
+
+  const handleDownloadPatch = (vuln: Vulnerability) => {
+    toast({
+      title: "Downloading Patch",
+      description: `Preparing patch package for ${vuln.cve}`,
+    });
+  };
+
   const filteredVulnerabilities = mockVulnerabilities.filter(vuln => {
     const matchesSearch = vuln.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          vuln.cve.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -156,10 +210,117 @@ export default function Vulnerabilities() {
           <h1 className="text-3xl font-bold text-foreground">Vulnerability Management</h1>
           <p className="text-muted-foreground">Track and remediate security vulnerabilities</p>
         </div>
-        <Button className="gap-2">
-          <Shield className="h-4 w-4" />
-          Run Scan
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={scanDialogOpen} onOpenChange={setScanDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Shield className="h-4 w-4" />
+                Run Scan
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Run Vulnerability Scan</DialogTitle>
+                <DialogDescription>
+                  Configure and start a new vulnerability scan
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6 py-4">
+                {/* Scan Type */}
+                <div className="space-y-2">
+                  <Label>Scan Type</Label>
+                  <Select value={scanType} onValueChange={setScanType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full">Full Scan (Comprehensive)</SelectItem>
+                      <SelectItem value="quick">Quick Scan (Critical only)</SelectItem>
+                      <SelectItem value="custom">Custom Scan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Target Selection */}
+                <div className="space-y-3">
+                  <Label>Select Targets</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {scanTargets.map((target) => {
+                      const Icon = target.icon;
+                      return (
+                        <div
+                          key={target.id}
+                          className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                            selectedTargets.includes(target.id)
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:bg-accent/50'
+                          }`}
+                          onClick={() => handleTargetToggle(target.id)}
+                        >
+                          <Checkbox
+                            checked={selectedTargets.includes(target.id)}
+                            onCheckedChange={() => handleTargetToggle(target.id)}
+                          />
+                          <Icon className="h-5 w-5 text-primary" />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{target.label}</p>
+                            <p className="text-xs text-muted-foreground">{target.count} assets</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Vulnerability Checks */}
+                <div className="space-y-3">
+                  <Label>Vulnerability Checks</Label>
+                  <div className="space-y-2 p-4 border rounded-lg bg-accent/20">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        CVE Database
+                      </span>
+                      <Badge variant="outline">15,847 signatures</Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        Configuration Issues
+                      </span>
+                      <Badge variant="outline">2,341 checks</Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        Outdated Software
+                      </span>
+                      <Badge variant="outline">8,923 packages</Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        Known Exploits
+                      </span>
+                      <Badge variant="outline">4,562 patterns</Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setScanDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleStartScan} className="gap-2">
+                  <Play className="h-4 w-4" />
+                  Start Scan
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -316,9 +477,31 @@ export default function Vulnerabilities() {
                   {getSeverityBadge(vuln.severity)}
                   {getStatusBadge(vuln.status)}
                   
-                  <Button variant="ghost" size="sm">
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    {vuln.status === 'open' && (
+                      <>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => handlePatchVulnerability(vuln)}
+                          className="gap-2"
+                        >
+                          <Settings className="h-4 w-4" />
+                          Patch
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownloadPatch(vuln)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                    <Button variant="ghost" size="sm">
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
