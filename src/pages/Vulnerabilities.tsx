@@ -204,8 +204,8 @@ export default function Vulnerabilities() {
   });
 
   return (
-    <div className="flex-1 space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="flex-1 space-y-6 p-4 md:p-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Vulnerability Management</h1>
           <p className="text-muted-foreground">Track and remediate security vulnerabilities</p>
@@ -403,8 +403,8 @@ export default function Vulnerabilities() {
       </SecurityCard>
 
       {/* Search and Filters */}
-      <div className="flex gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search vulnerabilities..."
@@ -414,7 +414,7 @@ export default function Vulnerabilities() {
           />
         </div>
         <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filter by severity" />
           </SelectTrigger>
           <SelectContent>
@@ -426,7 +426,7 @@ export default function Vulnerabilities() {
           </SelectContent>
         </Select>
         <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -449,18 +449,18 @@ export default function Vulnerabilities() {
             {filteredVulnerabilities.map((vuln) => (
               <div
                 key={vuln.id}
-                className="flex items-center justify-between p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-colors"
+                className="flex flex-col gap-4 p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-colors md:flex-row md:items-center md:justify-between"
               >
-                <div className="flex items-center gap-4">
-                  <Bug className={`h-5 w-5 ${getSeverityColor(vuln.severity)}`} />
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-start gap-4">
+                  <Bug className={`h-5 w-5 flex-shrink-0 mt-1 ${getSeverityColor(vuln.severity)}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h3 className="font-medium text-foreground">{vuln.title}</h3>
                       <Badge variant="outline" className="text-xs">{vuln.cve}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">{vuln.description}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>Assets: {vuln.affectedAssets.join(', ')}</span>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span className="break-all">Assets: {vuln.affectedAssets.join(', ')}</span>
                       <span>Category: {vuln.category}</span>
                       <span>Discovered: {vuln.discoveredDate}</span>
                       {vuln.dueDate && <span>Due: {vuln.dueDate}</span>}
@@ -468,16 +468,18 @@ export default function Vulnerabilities() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <div className="text-center">
                     <p className="text-lg font-bold text-foreground">{vuln.score}</p>
                     <p className="text-xs text-muted-foreground">CVSS</p>
                   </div>
                   
-                  {getSeverityBadge(vuln.severity)}
-                  {getStatusBadge(vuln.status)}
+                  <div className="flex flex-wrap gap-2">
+                    {getSeverityBadge(vuln.severity)}
+                    {getStatusBadge(vuln.status)}
+                  </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {vuln.status === 'open' && (
                       <>
                         <Button 
@@ -487,7 +489,7 @@ export default function Vulnerabilities() {
                           className="gap-2"
                         >
                           <Settings className="h-4 w-4" />
-                          Patch
+                          <span className="hidden sm:inline">Patch</span>
                         </Button>
                         <Button 
                           variant="outline" 

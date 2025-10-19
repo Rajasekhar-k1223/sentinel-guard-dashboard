@@ -188,7 +188,7 @@ export function NavigationSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-border/50">
+    <Sidebar className="border-r border-border/50" collapsible="icon">
       <SidebarHeader className="p-6">
         <div className="flex items-center space-x-3">
           <img 

@@ -106,9 +106,9 @@ export default function FileIntegrityMonitoring() {
   });
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6 p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">File Integrity Monitoring</h1>
           <p className="text-muted-foreground">Monitor and detect file system changes</p>
@@ -181,12 +181,12 @@ export default function FileIntegrityMonitoring() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row">
         <Input
           placeholder="Search by file path or agent..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="flex-1 sm:max-w-sm"
         />
         <select
           value={selectedSeverity}
@@ -211,19 +211,19 @@ export default function FileIntegrityMonitoring() {
             {filteredEvents.map((event) => (
               <div
                 key={event.id}
-                className="flex items-center justify-between p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-colors"
+                className="flex flex-col gap-4 p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-colors md:flex-row md:items-center md:justify-between"
               >
                 <div className="flex items-center gap-4">
                   {getActionIcon(event.action)}
-                  <div>
-                    <h3 className="font-medium text-foreground">{event.file}</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-foreground break-all">{event.file}</h3>
                     <p className="text-sm text-muted-foreground">
                       {event.action.toUpperCase()} on {event.agent} • {event.timestamp}
                     </p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-6">
+                <div className="flex flex-wrap items-center gap-4 md:gap-6">
                   <div className="text-center">
                     <p className="text-sm font-medium text-foreground capitalize">{event.action}</p>
                     <p className="text-xs text-muted-foreground">Action</p>
@@ -245,7 +245,7 @@ export default function FileIntegrityMonitoring() {
                   
                   {getSeverityBadge(event.severity)}
                   
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="whitespace-nowrap">
                     View Details
                   </Button>
                 </div>
