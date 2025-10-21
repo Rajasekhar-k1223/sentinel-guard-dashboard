@@ -1,4 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import axios from 'axios';
 import { ArrowLeft, Monitor, Activity, AlertTriangle, CheckCircle, XCircle, Download, Trash2, HardDrive, Network } from 'lucide-react';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
@@ -9,84 +11,155 @@ export default function AgentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Mock data - in real app, fetch based on id
-  const agent = {
-    id: id || 'agent-001',
-    hostname: 'WEB-SERVER-01',
-    os: 'Windows Server 2019',
-    version: '2.1.3',
-    status: 'online',
-    lastSeen: '2 minutes ago',
-    ip: '192.168.1.10',
-    events: 1247,
-    uptime: '45 days 3 hours',
-    cpu: '24%',
-    memory: '67%',
-    disk: '45%',
-    installedDate: '2023-11-15',
-    groups: ['Production', 'Web Servers'],
-    policies: ['Security Baseline', 'Windows Hardening'],
-  };
+  const [agent, setAgent] = useState<any>(null);
+  const [events, setEvents] = useState<any[]>([]);
+  const [cpu, setCpu] = useState<any[]>([]);
+  const [memory, setMemory] = useState<any[]>([]);
+  const [uptime, setUptime] = useState<any[]>([]);
+  const [cpuData, setCpuData] = useState<any[]>([]);
+  const [memoryData, setMemoryData] = useState<any[]>([]);
+  const [diskData, setDiskData] = useState<any[]>([]);
+  const [networkData, setNetworkData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const wsRef = useRef<WebSocket | null>(null);
 
-  const recentEvents = [
-    { id: 1, time: '2 minutes ago', type: 'Info', message: 'Heartbeat received', severity: 'low' },
-    { id: 2, time: '15 minutes ago', type: 'Warning', message: 'High CPU usage detected', severity: 'medium' },
-    { id: 3, time: '1 hour ago', type: 'Info', message: 'Security scan completed', severity: 'low' },
-    { id: 4, time: '2 hours ago', type: 'Critical', message: 'Suspicious process detected', severity: 'high' },
-  ];
+  const API_BASE = 'http://localhost:8000/api'; // Replace with your backend
+  const WS_BASE = 'ws://localhost:8000/ws/stream'; // WebSocket endpoint for metrics
 
-  // Mock time-series data for graphs
-  const cpuData = [
-    { time: '00:00', value: 15 },
-    { time: '04:00', value: 22 },
-    { time: '08:00', value: 45 },
-    { time: '12:00', value: 38 },
-    { time: '16:00', value: 52 },
-    { time: '20:00', value: 24 },
-    { time: '23:59', value: 24 },
-  ];
+  useEffect(() => {
+    // Fetch agent details and events once
+    const fetchAgent = async () => {
+      try {
+        setLoading(true);
+        const agentRes = await axios.get(`${API_BASE}/agents/${id}`);
+        
+        setAgent(agentRes.data);
 
-  const memoryData = [
-    { time: '00:00', value: 55 },
-    { time: '04:00', value: 58 },
-    { time: '08:00', value: 72 },
-    { time: '12:00', value: 68 },
-    { time: '16:00', value: 75 },
-    { time: '20:00', value: 65 },
-    { time: '23:59', value: 67 },
-  ];
+        const eventsRes = await axios.get(`${API_BASE}/agents/${id}/events`);
+        setEvents(eventsRes.data);
 
-  const diskData = [
-    { time: '00:00', value: 42 },
-    { time: '04:00', value: 43 },
-    { time: '08:00', value: 44 },
-    { time: '12:00', value: 44 },
-    { time: '16:00', value: 45 },
-    { time: '20:00', value: 45 },
-    { time: '23:59', value: 45 },
-  ];
+      } catch (err) {
+        console.error('Error fetching agent data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const networkData = [
-    { time: '00:00', inbound: 120, outbound: 80 },
-    { time: '04:00', inbound: 150, outbound: 95 },
-    { time: '08:00', inbound: 280, outbound: 180 },
-    { time: '12:00', inbound: 320, outbound: 220 },
-    { time: '16:00', inbound: 290, outbound: 190 },
-    { time: '20:00', inbound: 180, outbound: 120 },
-    { time: '23:59', inbound: 140, outbound: 90 },
-  ];
+    fetchAgent();
+  }, [id]);
+
+  useEffect(() => {
+    // Open WebSocket for real-time metrics
+    wsRef.current = new WebSocket(`${WS_BASE}/${id}`);
+
+    wsRef.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('WebSocket data:', data);
+        // Expecting format: { cpu: [...], memory: [...], disk: [...], network: [...] }
+        if (data.type === "history" && Array.isArray(data.data)) {
+          // ✅ Sort by timestamp safely
+          const historyData = data.data.sort((a: any, b: any) => {
+            const at = new Date(a.timestamp).getTime();
+            const bt = new Date(b.timestamp).getTime();
+            return at - bt;
+          });
+
+          // ✅ Initialize arrays for graph data
+          const cpuPoints: { time: string; value: number }[] = [];
+          const memPoints: { time: string; value: number }[] = [];
+          const diskPoints: { time: string; value: number }[] = [];
+          const networkPoints: { time: string; value: number }[] = [];
+
+          historyData.forEach((entry: any) => {
+            const time = new Date(entry.timestamp).toLocaleTimeString();
+
+            // Safely ensure numbers using Number()
+            const cpu = Number(entry.cpu_percent) || 0;
+            const mem = Number(entry.mem_percent) || 0;
+            const disk = Number(entry.disk_percent) || 0;
+            const network = Number(entry.network_percent) || 0;
+
+            cpuPoints.push({ time, value: cpu });
+            memPoints.push({ time, value: mem });
+            diskPoints.push({ time, value: disk });
+            networkPoints.push({ time, value: network });
+
+            // if (entry.network) {
+            //   const networkValue =
+            //     Number(entry.network.throughput) ||
+            //     Number(entry.network.rx_bytes) ||
+            //     0;
+            //   networkPoints.push({ time, value: networkValue });
+            // }
+          });
+
+          setCpuData(cpuPoints.slice(-20));
+          setMemoryData(memPoints.slice(-20));
+          setDiskData(diskPoints.slice(-20));
+          console.log(networkPoints.slice(-20))
+          setNetworkData(networkPoints.slice(-20));
+        }else if(data.type === "update" && data.agent) {
+        const now = new Date().toLocaleTimeString();
+        setCpu(data.agent.cpu_percent);
+        setMemory(data.agent.mem_percent);
+        setUptime(data.agent.uptime);
+         if (data.agent.cpu_percent !== undefined) {
+          setCpuData((prev) => [
+            ...prev.slice(-19),
+            { time: now, value: data.agent.cpu_percent },
+          ]);
+        }
+
+        // ✅ Memory Graph
+        if (data.agent.mem_percent !== undefined) {
+          setMemoryData((prev) => [
+            ...prev.slice(-19),
+            { time: now, value: data.agent.mem_percent },
+          ]);
+        }
+
+        // ✅ Disk Graph
+        if (data.agent.disk_percent !== undefined) {
+          setDiskData((prev) => [
+            ...prev.slice(-19),
+            { time: now, value: data.agent.disk_percent },
+          ]);
+        }
+        console.log('Network data update:', data.agent.network_percent);
+        // ✅ Network Graph (could be in Mbps or KB/s)
+        if (data.agent.network_percent !== undefined) {
+          console.log('Updating network data with:', data.agent.network_percent);
+          setNetworkData((prev) => [
+            ...prev.slice(-19),
+            // {
+            //   time: now,
+            //   value: data.agent.network.throughput || data.agent.network.rx_bytes,
+            // },
+             { time: now, value: data.agent.network_percent },
+          ]);
+        }
+      }
+      } catch (err) {
+        console.error('Error parsing WebSocket data:', err);
+      }
+    };
+
+    wsRef.current.onclose = () => console.log('WebSocket closed');
+
+    return () => {
+      wsRef.current?.close();
+    };
+  }, [id]);
 
   const getStatusBadge = () => {
+    if (!agent) return null;
     const variants: { [key: string]: "destructive" | "default" | "secondary" } = {
       online: 'default',
       warning: 'secondary',
       offline: 'destructive'
     };
-    return (
-      <Badge variant={variants[agent.status] || 'secondary'}>
-        {agent.status.toUpperCase()}
-      </Badge>
-    );
+    return <Badge variant={variants[agent.status] || 'secondary'}>{agent.status.toUpperCase()}</Badge>;
   };
 
   const getSeverityBadge = (severity: string) => {
@@ -95,15 +168,16 @@ export default function AgentDetail() {
       medium: 'secondary',
       low: 'default'
     };
-    return (
-      <Badge variant={variants[severity] || 'default'}>
-        {severity.toUpperCase()}
-      </Badge>
-    );
+    return <Badge variant={variants[severity] || 'default'}>{severity.toUpperCase()}</Badge>;
   };
+
+  if (loading || !agent) {
+    return <div className="p-6 text-center">Loading agent data...</div>;
+  }
 
   return (
     <div className="flex-1 space-y-6 p-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/agents')}>
@@ -111,7 +185,7 @@ export default function AgentDetail() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-foreground">{agent.hostname}</h1>
-            <p className="text-muted-foreground">{agent.os} • {agent.ip}</p>
+            <p className="text-muted-foreground">{agent.os} • {agent.ip_address}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -136,7 +210,7 @@ export default function AgentDetail() {
                 <Activity className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{agent.events}</p>
+                <p className="text-2xl font-bold text-foreground">{agent.events_count}</p>
                 <p className="text-sm text-muted-foreground">Total Events</p>
               </div>
             </div>
@@ -150,7 +224,7 @@ export default function AgentDetail() {
                 <CheckCircle className="h-6 w-6 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{agent.uptime}</p>
+                <p className="text-2xl font-bold text-foreground">{uptime}</p>
                 <p className="text-sm text-muted-foreground">Uptime</p>
               </div>
             </div>
@@ -164,7 +238,7 @@ export default function AgentDetail() {
                 <Monitor className="h-6 w-6 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{agent.cpu}</p>
+                <p className="text-2xl font-bold text-foreground">{cpu}%</p>
                 <p className="text-sm text-muted-foreground">CPU Usage</p>
               </div>
             </div>
@@ -178,7 +252,7 @@ export default function AgentDetail() {
                 <Activity className="h-6 w-6 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{agent.memory}</p>
+                <p className="text-2xl font-bold text-foreground">{memory}%</p>
                 <p className="text-sm text-muted-foreground">Memory Usage</p>
               </div>
             </div>
@@ -186,8 +260,8 @@ export default function AgentDetail() {
         </SecurityCard>
       </div>
 
+      {/* Agent Info & Policies */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Agent Information */}
         <SecurityCard>
           <SecurityCardHeader>
             <SecurityCardTitle>Agent Information</SecurityCardTitle>
@@ -200,26 +274,26 @@ export default function AgentDetail() {
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Version:</span>
-                <span className="font-medium text-foreground">v{agent.version}</span>
+                <span className="font-medium text-foreground">v{agent.os_version}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Last Seen:</span>
-                <span className="font-medium text-foreground">{agent.lastSeen}</span>
+                <span className="font-medium text-foreground">{agent.last_seen}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Disk Usage:</span>
-                <span className="font-medium text-foreground">{agent.disk}</span>
+                <span className="font-medium text-foreground">{agent.disk_percent}%</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Installed:</span>
-                <span className="font-medium text-foreground">{agent.installedDate}</span>
+                                <span className="font-medium text-foreground">{agent.installed_at}</span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-muted-foreground">Groups:</span>
                 <div className="flex gap-2">
-                  {agent.groups.map((group) => (
+                  {/* {agent.agents.map((group: string) => (
                     <Badge key={group} variant="outline">{group}</Badge>
-                  ))}
+                  ))} */}
                 </div>
               </div>
             </div>
@@ -233,7 +307,7 @@ export default function AgentDetail() {
           </SecurityCardHeader>
           <SecurityCardContent>
             <div className="space-y-3">
-              {agent.policies.map((policy, index) => (
+              {/* {agent.policies.map((policy: string, index: number) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-3 border border-border/50 rounded-lg"
@@ -244,7 +318,7 @@ export default function AgentDetail() {
                   </div>
                   <Badge variant="default">Active</Badge>
                 </div>
-              ))}
+              ))} */}
             </div>
           </SecurityCardContent>
         </SecurityCard>
@@ -252,12 +326,12 @@ export default function AgentDetail() {
 
       {/* Performance Metrics Graphs */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* CPU Usage Graph */}
+        {/* CPU */}
         <SecurityCard>
           <SecurityCardHeader>
             <SecurityCardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
-              CPU Usage (24h)
+              CPU Usage (60 mins)
             </SecurityCardTitle>
           </SecurityCardHeader>
           <SecurityCardContent>
@@ -270,16 +344,8 @@ export default function AgentDetail() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
-                <YAxis 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickFormatter={(value) => `${value}%`}
-                />
+                <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `${v}%`} />
                 <Tooltip 
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
@@ -289,89 +355,73 @@ export default function AgentDetail() {
                   }}
                   formatter={(value: number) => [`${value}%`, 'CPU']}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  fill="url(#cpuGradient)" 
-                />
+                <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#cpuGradient)" />
               </AreaChart>
             </ResponsiveContainer>
           </SecurityCardContent>
         </SecurityCard>
 
-        {/* Memory Usage Graph */}
-        <SecurityCard>
-          <SecurityCardHeader>
-            <SecurityCardTitle className="flex items-center gap-2">
-              <Monitor className="h-5 w-5 text-info" />
-              Memory Usage (24h)
-            </SecurityCardTitle>
-          </SecurityCardHeader>
-          <SecurityCardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={memoryData}>
-                <defs>
-                  <linearGradient id="memoryGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--info))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--info))" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
-                <YAxis 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickFormatter={(value) => `${value}%`}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                    color: 'hsl(var(--foreground))'
-                  }}
-                  formatter={(value: number) => [`${value}%`, 'Memory']}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="hsl(var(--info))" 
-                  strokeWidth={2}
-                  fill="url(#memoryGradient)" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </SecurityCardContent>
-        </SecurityCard>
+        {/* Memory */}
+       <SecurityCard>
+  <SecurityCardHeader>
+    <SecurityCardTitle className="flex items-center gap-2">
+      <Monitor className="h-5 w-5 text-cyan-400 dark:text-cyan-300" />
+      Memory Usage (60 mins)
+    </SecurityCardTitle>
+  </SecurityCardHeader>
+  <SecurityCardContent>
+    <ResponsiveContainer width="100%" height={200}>
+      <AreaChart data={memoryData}>
+        <defs>
+          <linearGradient id="memoryGradient" x1="0" y1="0" x2="0" y2="1">
+            {/* Brighter gradient for dark mode visibility */}
+            <stop offset="5%" stopColor="rgba(6, 182, 212, 0.7)" />   {/* cyan-500 */}
+            <stop offset="95%" stopColor="rgba(6, 182, 212, 0)" />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+        <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+        <YAxis
+          stroke="hsl(var(--muted-foreground))"
+          fontSize={12}
+          tickFormatter={(v) => `${v}%`}
+        />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: 'hsl(var(--card))',
+            border: '1px solid hsl(var(--border))',
+            borderRadius: '8px',
+            color: 'hsl(var(--foreground))',
+          }}
+          formatter={(value: number) => [`${value}%`, 'Memory']}
+        />
+        <Area
+          type="monotone"
+          dataKey="value"
+          stroke="rgba(6, 182, 212, 0.9)" // brighter cyan line
+          strokeWidth={2}
+          fill="url(#memoryGradient)"
+          dot={{ r: 2, fill: 'rgba(6, 182, 212, 1)' }}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  </SecurityCardContent>
+</SecurityCard>
 
-        {/* Disk Usage Graph */}
+        {/* Disk */}
         <SecurityCard>
           <SecurityCardHeader>
             <SecurityCardTitle className="flex items-center gap-2">
               <HardDrive className="h-5 w-5 text-warning" />
-              Disk Usage (24h)
+              Disk Usage (60 mins)
             </SecurityCardTitle>
           </SecurityCardHeader>
           <SecurityCardContent>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={diskData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
-                <YAxis 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickFormatter={(value) => `${value}%`}
-                />
+                <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `${v}%`} />
                 <Tooltip 
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
@@ -381,69 +431,56 @@ export default function AgentDetail() {
                   }}
                   formatter={(value: number) => [`${value}%`, 'Disk']}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="hsl(var(--warning))" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--warning))' }}
-                />
+                <Line type="monotone" dataKey="value" stroke="hsl(var(--warning))" strokeWidth={2} dot={{ fill: 'hsl(var(--warning))' }} />
               </LineChart>
             </ResponsiveContainer>
           </SecurityCardContent>
         </SecurityCard>
 
-        {/* Network Traffic Graph */}
-        <SecurityCard>
-          <SecurityCardHeader>
-            <SecurityCardTitle className="flex items-center gap-2">
-              <Network className="h-5 w-5 text-success" />
-              Network Traffic (24h)
-            </SecurityCardTitle>
-          </SecurityCardHeader>
-          <SecurityCardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={networkData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
-                <YAxis 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickFormatter={(value) => `${value} MB/s`}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                    color: 'hsl(var(--foreground))'
-                  }}
-                  formatter={(value: number) => [`${value} MB/s`]}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="inbound" 
-                  stroke="hsl(var(--success))" 
-                  strokeWidth={2}
-                  name="Inbound"
-                  dot={{ fill: 'hsl(var(--success))' }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="outbound" 
-                  stroke="hsl(var(--info))" 
-                  strokeWidth={2}
-                  name="Outbound"
-                  dot={{ fill: 'hsl(var(--info))' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </SecurityCardContent>
-        </SecurityCard>
+        {/* Network */}
+         <SecurityCard>
+      <SecurityCardHeader>
+        <SecurityCardTitle className="flex items-center gap-2">
+          <Network className="h-5 w-5 text-success" />
+          Network Usage (60 mins)
+        </SecurityCardTitle>
+      </SecurityCardHeader>
+      <SecurityCardContent>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={networkData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis
+              dataKey="time"
+              stroke="hsl(var(--muted-foreground))"
+              fontSize={12}
+            />
+            <YAxis
+              stroke="hsl(var(--muted-foreground))"
+              fontSize={12}
+              tickFormatter={(v) => `${v}%`}
+              domain={[0, 100]}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: "8px",
+                color: "hsl(var(--foreground))",
+              }}
+              formatter={(value: number) => [`${value.toFixed(2)}%`, "Network"]}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke="hsl(var(--success))"
+              strokeWidth={2}
+              dot={{ fill: "hsl(var(--success))" }}
+              name="Network %"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </SecurityCardContent>
+    </SecurityCard>
       </div>
 
       {/* Recent Events */}
@@ -453,7 +490,7 @@ export default function AgentDetail() {
         </SecurityCardHeader>
         <SecurityCardContent>
           <div className="space-y-3">
-            {recentEvents.map((event) => (
+            {events.map((event) => (
               <div
                 key={event.id}
                 className="flex items-center justify-between p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-colors"
@@ -476,3 +513,4 @@ export default function AgentDetail() {
     </div>
   );
 }
+
