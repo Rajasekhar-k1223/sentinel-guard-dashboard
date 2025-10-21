@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Network, Activity, Shield, AlertTriangle, TrendingUp, Filter } from 'lucide-react';
+import { Network, Activity, Shield, AlertTriangle, TrendingUp, Filter, Eye, Clock, Globe } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +78,8 @@ const networkStats: NetworkStats = {
 export default function NetworkSecurity() {
   const [selectedTimeframe, setSelectedTimeframe] = useState('24h');
   const [selectedAction, setSelectedAction] = useState('all');
+  const [selectedEvent, setSelectedEvent] = useState<NetworkEvent | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   const getActionColor = (action: string) => {
     switch (action) {
@@ -111,6 +114,11 @@ export default function NetworkSecurity() {
         {severity.toUpperCase()}
       </Badge>
     );
+  };
+
+  const handleViewEventDetails = (event: NetworkEvent) => {
+    setSelectedEvent(event);
+    setDetailsDialogOpen(true);
   };
 
   const filteredEvents = mockNetworkEvents.filter(event => {
@@ -274,8 +282,8 @@ export default function NetworkSecurity() {
                 <div className="flex items-center gap-3">
                   {getActionBadge(event.action)}
                   {getSeverityBadge(event.severity)}
-                  <Button variant="ghost" size="sm">
-                    <TrendingUp className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" onClick={() => handleViewEventDetails(event)}>
+                    <Eye className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -283,6 +291,87 @@ export default function NetworkSecurity() {
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Network Event Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Network Event Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about the network security event
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEvent && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Event ID</p>
+                  <p className="font-medium">{selectedEvent.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Timestamp</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedEvent.timestamp}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Source IP</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Globe className="h-3 w-3" />
+                    {selectedEvent.sourceIP}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Destination IP</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Globe className="h-3 w-3" />
+                    {selectedEvent.destIP}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Port</p>
+                  <p className="font-medium">{selectedEvent.port}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Protocol</p>
+                  <p className="font-medium">{selectedEvent.protocol}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Action Taken</p>
+                  <div className="mt-1">
+                    {getActionBadge(selectedEvent.action)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Severity</p>
+                  <div className="mt-1">
+                    {getSeverityBadge(selectedEvent.severity)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Rule Triggered</p>
+                  <p className="font-medium">{selectedEvent.rule}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Bytes Transferred</p>
+                  <p className="font-medium">{selectedEvent.bytes.toLocaleString()} bytes</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Analysis</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Connection was {selectedEvent.action}ed by firewall rule</p>
+                  <p>• Geolocation: Unknown (requires GeoIP lookup)</p>
+                  <p>• Threat intelligence: No known malicious activity</p>
+                  <p>• Recommendation: {selectedEvent.action === 'block' ? 'Maintain block rule' : 'Review connection'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

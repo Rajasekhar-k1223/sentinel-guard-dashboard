@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Shield, CheckCircle, AlertTriangle, XCircle, FileText, Calendar } from 'lucide-react';
+import { Shield, CheckCircle, AlertTriangle, XCircle, FileText, Calendar, Eye, Clock, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -138,6 +139,8 @@ const mockControls: ComplianceControl[] = [
 export default function Compliance() {
   const [selectedFramework, setSelectedFramework] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedFrameworkDetail, setSelectedFrameworkDetail] = useState<ComplianceFramework | null>(null);
+  const [frameworkDialogOpen, setFrameworkDialogOpen] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -197,6 +200,11 @@ export default function Compliance() {
         {labels[status] || status.toUpperCase()}
       </Badge>
     );
+  };
+
+  const handleViewFramework = (framework: ComplianceFramework) => {
+    setSelectedFrameworkDetail(framework);
+    setFrameworkDialogOpen(true);
   };
 
   const filteredControls = mockControls.filter(control => {
@@ -349,11 +357,110 @@ export default function Compliance() {
                     <span>Next Assessment: {framework.nextAssessment}</span>
                   </div>
                 </div>
+
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-2"
+                  onClick={() => handleViewFramework(framework)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
               </div>
             ))}
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Framework Details Dialog */}
+      <Dialog open={frameworkDialogOpen} onOpenChange={setFrameworkDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Compliance Framework Details</DialogTitle>
+            <DialogDescription>
+              Detailed compliance status and control information
+            </DialogDescription>
+          </DialogHeader>
+          {selectedFrameworkDetail && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Framework</p>
+                  <p className="font-medium">{selectedFrameworkDetail.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <div className="mt-1">
+                    {getFrameworkStatusBadge(selectedFrameworkDetail.status)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Compliance Score</p>
+                  <p className="font-medium text-2xl">{selectedFrameworkDetail.complianceScore}%</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Controls</p>
+                  <p className="font-medium">{selectedFrameworkDetail.totalControls}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Description</p>
+                <p className="text-sm">{selectedFrameworkDetail.description}</p>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-3">Control Status Breakdown</h4>
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="bg-success/10 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Passed</p>
+                    <p className="text-2xl font-bold text-success">{selectedFrameworkDetail.passedControls}</p>
+                  </div>
+                  <div className="bg-warning/10 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Warnings</p>
+                    <p className="text-2xl font-bold text-warning">{selectedFrameworkDetail.warningControls}</p>
+                  </div>
+                  <div className="bg-critical/10 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Failed</p>
+                    <p className="text-2xl font-bold text-critical">{selectedFrameworkDetail.failedControls}</p>
+                  </div>
+                  <div className="bg-primary/10 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Total</p>
+                    <p className="text-2xl font-bold text-primary">{selectedFrameworkDetail.totalControls}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Assessment Timeline</h4>
+                <div className="text-sm space-y-1">
+                  <p className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-muted-foreground">Last Assessment:</span>
+                    <span className="font-medium">{selectedFrameworkDetail.lastAssessment}</span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span className="text-muted-foreground">Next Assessment:</span>
+                    <span className="font-medium">{selectedFrameworkDetail.nextAssessment}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Recommendations</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Address {selectedFrameworkDetail.failedControls} failed controls immediately</p>
+                  <p>• Review {selectedFrameworkDetail.warningControls} warning controls within 30 days</p>
+                  <p>• Maintain current compliance posture for passed controls</p>
+                  <p>• Schedule remediation planning session</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Filters */}
       <div className="flex gap-4">

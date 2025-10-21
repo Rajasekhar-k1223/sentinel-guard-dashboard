@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
-import { Search, FileText, AlertTriangle, Plus, Upload } from 'lucide-react';
+import { Search, FileText, AlertTriangle, Plus, Upload, Settings } from 'lucide-react';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 
 interface YaraRule {
   id: string;
@@ -79,6 +83,8 @@ const mockYaraMatches: YaraMatch[] = [
 export default function YaraAnalysis() {
   const [activeTab, setActiveTab] = useState<'rules' | 'matches'>('rules');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRule, setSelectedRule] = useState<YaraRule | null>(null);
+  const [configOpen, setConfigOpen] = useState(false);
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 90) return 'text-critical';
@@ -101,6 +107,75 @@ export default function YaraAnalysis() {
           <p className="text-muted-foreground">Malware detection and pattern matching</p>
         </div>
         <div className="flex gap-2">
+          <Dialog open={configOpen} onOpenChange={setConfigOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Settings className="h-4 w-4" />
+                Configure
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>YARA Configuration</DialogTitle>
+                <DialogDescription>
+                  Configure YARA scanning settings and rule management
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-6 py-4">
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-foreground">Scan Settings</h3>
+                  <div className="space-y-3">
+                    {[
+                      { name: 'Auto-scan new files', desc: 'Automatically scan files as they are created or modified' },
+                      { name: 'Real-time scanning', desc: 'Enable continuous real-time YARA scanning' },
+                      { name: 'Alert on matches', desc: 'Send notifications when YARA rules match' },
+                      { name: 'Quarantine threats', desc: 'Automatically quarantine matched files' }
+                    ].map((option, idx) => (
+                      <div key={idx} className="flex items-start gap-3 p-3 border border-border rounded-lg">
+                        <Checkbox defaultChecked id={`scan-${idx}`} />
+                        <div className="flex-1">
+                          <Label htmlFor={`scan-${idx}`} className="font-medium cursor-pointer">
+                            {option.name}
+                          </Label>
+                          <p className="text-sm text-muted-foreground">{option.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-foreground">Rule Categories</h3>
+                  <div className="space-y-3">
+                    {[
+                      { name: 'Malware Detection', count: 45 },
+                      { name: 'Ransomware', count: 23 },
+                      { name: 'PowerShell Scripts', count: 18 },
+                      { name: 'Network Threats', count: 12 }
+                    ].map((category, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Checkbox defaultChecked id={`cat-${idx}`} />
+                          <Label htmlFor={`cat-${idx}`} className="font-medium cursor-pointer">
+                            {category.name}
+                          </Label>
+                        </div>
+                        <Badge variant="outline">{category.count} rules</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Custom YARA Rule</Label>
+                  <Textarea 
+                    placeholder="rule example { meta: ... strings: ... condition: ... }"
+                    className="font-mono text-sm min-h-[120px]"
+                  />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button variant="outline" className="gap-2" onClick={() => window.location.href = '/yara/upload'}>
             <Upload className="h-4 w-4" />
             Upload File
@@ -243,9 +318,59 @@ export default function YaraAnalysis() {
                       {rule.enabled ? "Enabled" : "Disabled"}
                     </Badge>
                     
-                    <Button variant="ghost" size="sm">
-                      Configure
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedRule(rule)}>
+                          Configure
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Configure YARA Rule</DialogTitle>
+                          <DialogDescription>
+                            Modify rule settings and behavior
+                          </DialogDescription>
+                        </DialogHeader>
+                        {selectedRule && (
+                          <div className="space-y-6 py-4">
+                            <div className="space-y-2">
+                              <Label>Rule Name</Label>
+                              <Input defaultValue={selectedRule.name} />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Category</Label>
+                              <Input defaultValue={selectedRule.category} />
+                            </div>
+
+                            <div className="space-y-3">
+                              <Label>Rule Options</Label>
+                              {[
+                                { name: 'Enable this rule', checked: selectedRule.enabled },
+                                { name: 'Send alerts on match', checked: true },
+                                { name: 'Log all matches', checked: true },
+                                { name: 'Auto-quarantine', checked: false }
+                              ].map((option, idx) => (
+                                <div key={idx} className="flex items-center gap-3">
+                                  <Checkbox defaultChecked={option.checked} id={`rule-opt-${idx}`} />
+                                  <Label htmlFor={`rule-opt-${idx}`} className="cursor-pointer">
+                                    {option.name}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Rule Definition</Label>
+                              <Textarea 
+                                className="font-mono text-sm min-h-[150px]"
+                                defaultValue={`rule ${selectedRule.name} {\n  meta:\n    description = "Rule description"\n    category = "${selectedRule.category}"\n  strings:\n    $string1 = "pattern"\n  condition:\n    $string1\n}`}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
               ))}

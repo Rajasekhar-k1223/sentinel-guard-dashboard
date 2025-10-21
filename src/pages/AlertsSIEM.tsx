@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Shield, Filter, Search, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { AlertTriangle, Shield, Filter, Search, Eye, CheckCircle, XCircle, Clock, Server, Tag } from 'lucide-react';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 interface Alert {
   id: string;
@@ -64,6 +67,7 @@ export default function AlertsSIEM() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -252,9 +256,140 @@ export default function AlertsSIEM() {
                 <div className="flex items-center gap-3">
                   {getSeverityBadge(alert.severity)}
                   {getStatusBadge(alert.status)}
-                  <Button variant="ghost" size="sm" onClick={() => window.location.href = `/alerts/${alert.id}`}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setSelectedAlert(alert)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Alert Details</DialogTitle>
+                        <DialogDescription>
+                          Complete information about the security alert
+                        </DialogDescription>
+                      </DialogHeader>
+                      {selectedAlert && (
+                        <div className="space-y-6 py-4">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <h3 className="text-xl font-semibold text-foreground">{selectedAlert.title}</h3>
+                              <p className="text-sm text-muted-foreground">{selectedAlert.id}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              {getSeverityBadge(selectedAlert.severity)}
+                              {getStatusBadge(selectedAlert.status)}
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                              <div>
+                                <Label className="text-muted-foreground flex items-center gap-2">
+                                  <Clock className="h-4 w-4" />
+                                  Timestamp
+                                </Label>
+                                <p className="font-medium text-foreground mt-1">{selectedAlert.timestamp}</p>
+                              </div>
+                              <div>
+                                <Label className="text-muted-foreground flex items-center gap-2">
+                                  <Server className="h-4 w-4" />
+                                  Source
+                                </Label>
+                                <p className="font-medium text-foreground mt-1">{selectedAlert.source}</p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              <div>
+                                <Label className="text-muted-foreground flex items-center gap-2">
+                                  <Tag className="h-4 w-4" />
+                                  Category
+                                </Label>
+                                <p className="font-medium text-foreground mt-1">{selectedAlert.category}</p>
+                              </div>
+                              <div>
+                                <Label className="text-muted-foreground flex items-center gap-2">
+                                  <AlertTriangle className="h-4 w-4" />
+                                  Severity Level
+                                </Label>
+                                <p className="font-medium text-foreground mt-1 capitalize">{selectedAlert.severity}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          <div className="space-y-2">
+                            <Label className="text-foreground font-semibold">Description</Label>
+                            <p className="text-muted-foreground">{selectedAlert.description}</p>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label className="text-foreground font-semibold">Related Events</Label>
+                            <div className="space-y-2">
+                              {[
+                                { time: '14:32:10', event: 'Initial detection triggered' },
+                                { time: '14:32:15', event: 'Alert generated and logged' },
+                                { time: '14:32:20', event: 'Notification sent to security team' }
+                              ].map((event, idx) => (
+                                <div key={idx} className="flex items-start gap-3 p-3 bg-accent/30 rounded-lg">
+                                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                  <div>
+                                    <p className="text-sm font-medium text-foreground">{event.time}</p>
+                                    <p className="text-sm text-muted-foreground">{event.event}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          <div className="space-y-3">
+                            <Label className="text-foreground font-semibold">Recommended Actions</Label>
+                            <div className="space-y-2">
+                              <div className="flex items-start gap-3 p-3 bg-critical/10 border border-critical/20 rounded-lg">
+                                <Shield className="h-5 w-5 text-critical mt-0.5" />
+                                <div>
+                                  <p className="font-medium text-foreground">Immediate Investigation Required</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Review system logs, verify user activity, and check for related indicators of compromise.
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3 p-3 bg-accent/50 border border-border rounded-lg">
+                                <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                                <div>
+                                  <p className="font-medium text-foreground">Document Findings</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Record all investigation steps and findings in the incident response system.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3 pt-4">
+                            <Button className="flex-1 gap-2">
+                              <CheckCircle className="h-4 w-4" />
+                              Mark as Resolved
+                            </Button>
+                            <Button variant="outline" className="flex-1 gap-2">
+                              <Eye className="h-4 w-4" />
+                              Start Investigation
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
                   <Button variant="ghost" size="sm">
                     <CheckCircle className="h-4 w-4" />
                   </Button>

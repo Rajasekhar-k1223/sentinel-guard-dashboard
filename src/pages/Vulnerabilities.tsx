@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { Bug, AlertTriangle, Shield, Search, Filter, ExternalLink } from 'lucide-react';
+import { Bug, AlertTriangle, Shield, Search, Filter, ExternalLink, Play, CheckCircle, Download, Settings, Database, Server, Cloud } from 'lucide-react';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from '@/hooks/use-toast';
 
 interface Vulnerability {
   id: string;
@@ -95,6 +99,12 @@ export default function Vulnerabilities() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [scanDialogOpen, setScanDialogOpen] = useState(false);
+  const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
+  const [scanType, setScanType] = useState('full');
+  const [patchDialogOpen, setPatchDialogOpen] = useState(false);
+  const [patchingVuln, setPatchingVuln] = useState<Vulnerability | null>(null);
+  const [patchProgress, setPatchProgress] = useState(0);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -140,6 +150,69 @@ export default function Vulnerabilities() {
     );
   };
 
+  const scanTargets = [
+    { id: 'web-servers', label: 'Web Servers', icon: Server, count: 12 },
+    { id: 'databases', label: 'Database Servers', icon: Database, count: 8 },
+    { id: 'cloud', label: 'Cloud Infrastructure', icon: Cloud, count: 25 },
+    { id: 'endpoints', label: 'Endpoints', icon: Server, count: 156 }
+  ];
+
+  const handleTargetToggle = (targetId: string) => {
+    setSelectedTargets(prev => 
+      prev.includes(targetId) 
+        ? prev.filter(id => id !== targetId)
+        : [...prev, targetId]
+    );
+  };
+
+  const handleStartScan = () => {
+    if (selectedTargets.length === 0) {
+      toast({
+        title: "No targets selected",
+        description: "Please select at least one target to scan",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Scan Started",
+      description: `Running ${scanType} vulnerability scan on ${selectedTargets.length} target(s)`
+    });
+    setScanDialogOpen(false);
+    setSelectedTargets([]);
+  };
+
+  const handlePatchVulnerability = (vuln: Vulnerability) => {
+    setPatchingVuln(vuln);
+    setPatchDialogOpen(true);
+    setPatchProgress(0);
+    
+    // Simulate patch progress
+    const interval = setInterval(() => {
+      setPatchProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          toast({
+            title: "Patch Completed",
+            description: `Successfully patched ${vuln.cve}`,
+          });
+          // TODO: EMAIL NOTIFICATION - Send patch completion to: security-admin@company.com
+          // Backend API: POST /api/vulnerabilities/${vuln.id}/notify-patched
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 500);
+  };
+
+  const handleDownloadPatch = (vuln: Vulnerability) => {
+    toast({
+      title: "Downloading Patch",
+      description: `Preparing patch package for ${vuln.cve}`,
+    });
+  };
+
   const filteredVulnerabilities = mockVulnerabilities.filter(vuln => {
     const matchesSearch = vuln.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          vuln.cve.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -150,16 +223,123 @@ export default function Vulnerabilities() {
   });
 
   return (
-    <div className="flex-1 space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="flex-1 space-y-6 p-4 md:p-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Vulnerability Management</h1>
           <p className="text-muted-foreground">Track and remediate security vulnerabilities</p>
         </div>
-        <Button className="gap-2">
-          <Shield className="h-4 w-4" />
-          Run Scan
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={scanDialogOpen} onOpenChange={setScanDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Shield className="h-4 w-4" />
+                Run Scan
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Run Vulnerability Scan</DialogTitle>
+                <DialogDescription>
+                  Configure and start a new vulnerability scan
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6 py-4">
+                {/* Scan Type */}
+                <div className="space-y-2">
+                  <Label>Scan Type</Label>
+                  <Select value={scanType} onValueChange={setScanType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full">Full Scan (Comprehensive)</SelectItem>
+                      <SelectItem value="quick">Quick Scan (Critical only)</SelectItem>
+                      <SelectItem value="custom">Custom Scan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Target Selection */}
+                <div className="space-y-3">
+                  <Label>Select Targets</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {scanTargets.map((target) => {
+                      const Icon = target.icon;
+                      return (
+                        <div
+                          key={target.id}
+                          className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                            selectedTargets.includes(target.id)
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:bg-accent/50'
+                          }`}
+                          onClick={() => handleTargetToggle(target.id)}
+                        >
+                          <Checkbox
+                            checked={selectedTargets.includes(target.id)}
+                            onCheckedChange={() => handleTargetToggle(target.id)}
+                          />
+                          <Icon className="h-5 w-5 text-primary" />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{target.label}</p>
+                            <p className="text-xs text-muted-foreground">{target.count} assets</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Vulnerability Checks */}
+                <div className="space-y-3">
+                  <Label>Vulnerability Checks</Label>
+                  <div className="space-y-2 p-4 border rounded-lg bg-accent/20">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        CVE Database
+                      </span>
+                      <Badge variant="outline">15,847 signatures</Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        Configuration Issues
+                      </span>
+                      <Badge variant="outline">2,341 checks</Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        Outdated Software
+                      </span>
+                      <Badge variant="outline">8,923 packages</Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        Known Exploits
+                      </span>
+                      <Badge variant="outline">4,562 patterns</Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setScanDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleStartScan} className="gap-2">
+                  <Play className="h-4 w-4" />
+                  Start Scan
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -242,8 +422,8 @@ export default function Vulnerabilities() {
       </SecurityCard>
 
       {/* Search and Filters */}
-      <div className="flex gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search vulnerabilities..."
@@ -253,7 +433,7 @@ export default function Vulnerabilities() {
           />
         </div>
         <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filter by severity" />
           </SelectTrigger>
           <SelectContent>
@@ -265,7 +445,7 @@ export default function Vulnerabilities() {
           </SelectContent>
         </Select>
         <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -288,18 +468,18 @@ export default function Vulnerabilities() {
             {filteredVulnerabilities.map((vuln) => (
               <div
                 key={vuln.id}
-                className="flex items-center justify-between p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-colors"
+                className="flex flex-col gap-4 p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-colors md:flex-row md:items-center md:justify-between"
               >
-                <div className="flex items-center gap-4">
-                  <Bug className={`h-5 w-5 ${getSeverityColor(vuln.severity)}`} />
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-start gap-4">
+                  <Bug className={`h-5 w-5 flex-shrink-0 mt-1 ${getSeverityColor(vuln.severity)}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h3 className="font-medium text-foreground">{vuln.title}</h3>
                       <Badge variant="outline" className="text-xs">{vuln.cve}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">{vuln.description}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>Assets: {vuln.affectedAssets.join(', ')}</span>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span className="break-all">Assets: {vuln.affectedAssets.join(', ')}</span>
                       <span>Category: {vuln.category}</span>
                       <span>Discovered: {vuln.discoveredDate}</span>
                       {vuln.dueDate && <span>Due: {vuln.dueDate}</span>}
@@ -307,24 +487,101 @@ export default function Vulnerabilities() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <div className="text-center">
                     <p className="text-lg font-bold text-foreground">{vuln.score}</p>
                     <p className="text-xs text-muted-foreground">CVSS</p>
                   </div>
                   
-                  {getSeverityBadge(vuln.severity)}
-                  {getStatusBadge(vuln.status)}
+                  <div className="flex flex-wrap gap-2">
+                    {getSeverityBadge(vuln.severity)}
+                    {getStatusBadge(vuln.status)}
+                  </div>
                   
-                  <Button variant="ghost" size="sm">
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    {vuln.status === 'open' && (
+                      <>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => handlePatchVulnerability(vuln)}
+                          className="gap-2"
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span className="hidden sm:inline">Patch</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownloadPatch(vuln)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                    <Button variant="ghost" size="sm">
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Patch Progress Dialog */}
+      <Dialog open={patchDialogOpen} onOpenChange={setPatchDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Patching Vulnerability</DialogTitle>
+            <DialogDescription>
+              Applying security patches to affected systems
+            </DialogDescription>
+          </DialogHeader>
+          {patchingVuln && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-1">{patchingVuln.cve}</p>
+                <p className="text-sm text-muted-foreground">{patchingVuln.title}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Patch Progress</span>
+                  <span>{patchProgress}%</span>
+                </div>
+                <Progress value={patchProgress} className="h-3" />
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-2">Affected Systems ({patchingVuln.affectedAssets.length})</h4>
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  {patchingVuln.affectedAssets.map((asset, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      {patchProgress > (idx + 1) * (100 / patchingVuln.affectedAssets.length) ? (
+                        <CheckCircle className="h-3 w-3 text-success" />
+                      ) : (
+                        <div className="h-3 w-3 border-2 border-muted rounded-full animate-pulse" />
+                      )}
+                      <span>{asset}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {patchProgress === 100 && (
+                <div className="bg-success/10 border border-success/20 rounded p-3">
+                  <p className="text-sm text-success font-medium">✓ Patch successfully applied to all systems</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email notification sent to security team
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

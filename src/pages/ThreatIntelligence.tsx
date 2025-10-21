@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Shield, AlertTriangle, Globe, Database, Search, Download } from 'lucide-react';
+import { Shield, AlertTriangle, Globe, Database, Search, Download, Eye, Clock, ExternalLink } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,6 +75,8 @@ export default function ThreatIntelligence() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
+  const [selectedThreat, setSelectedThreat] = useState<ThreatIndicator | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   const getTypeBadge = (type: string) => {
     const variants: { [key: string]: "destructive" | "default" | "secondary" | "outline" } = {
@@ -101,6 +104,11 @@ export default function ThreatIntelligence() {
         {severity.toUpperCase()}
       </Badge>
     );
+  };
+
+  const handleViewThreat = (threat: ThreatIndicator) => {
+    setSelectedThreat(threat);
+    setDetailsDialogOpen(true);
   };
 
   const filteredIndicators = mockIndicators.filter(indicator => {
@@ -272,6 +280,9 @@ export default function ThreatIntelligence() {
                 <div className="flex items-center gap-3">
                   {getTypeBadge(indicator.type)}
                   {getSeverityBadge(indicator.severity)}
+                  <Button variant="ghost" size="sm" onClick={() => handleViewThreat(indicator)}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
                   <Button variant="outline" size="sm">
                     Block
                   </Button>
@@ -281,6 +292,107 @@ export default function ThreatIntelligence() {
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Threat Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Threat Indicator Details</DialogTitle>
+            <DialogDescription>
+              Comprehensive threat intelligence information
+            </DialogDescription>
+          </DialogHeader>
+          {selectedThreat && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">IOC ID</p>
+                  <p className="font-medium">{selectedThreat.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Type</p>
+                  <div className="mt-1">
+                    {getTypeBadge(selectedThreat.type)}
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Value</p>
+                  <p className="font-medium font-mono break-all">{selectedThreat.value}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Threat Type</p>
+                  <p className="font-medium">{selectedThreat.threat_type}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Severity</p>
+                  <div className="mt-1">
+                    {getSeverityBadge(selectedThreat.severity)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Confidence Score</p>
+                  <p className="font-medium text-lg">{selectedThreat.confidence}%</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Source</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Database className="h-3 w-3" />
+                    {selectedThreat.source}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">First Seen</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedThreat.first_seen}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Last Seen</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedThreat.last_seen}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Description</p>
+                <p className="text-sm">{selectedThreat.description}</p>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Recommended Actions</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Block this indicator in firewall rules</p>
+                  <p>• Add to threat intelligence feeds</p>
+                  <p>• Monitor for related indicators</p>
+                  <p>• Check logs for historical matches</p>
+                  <p>• Update security policies accordingly</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Related Information</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p className="flex items-center gap-1">
+                    <ExternalLink className="h-3 w-3" />
+                    View in threat intelligence platform
+                  </p>
+                  <p className="flex items-center gap-1">
+                    <ExternalLink className="h-3 w-3" />
+                    Check MITRE ATT&CK framework
+                  </p>
+                  <p className="flex items-center gap-1">
+                    <ExternalLink className="h-3 w-3" />
+                    Search in threat feeds
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

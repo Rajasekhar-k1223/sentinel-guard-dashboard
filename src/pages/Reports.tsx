@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FileText, Download, Calendar, TrendingUp, PieChart, BarChart3 } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, PieChart, BarChart3, Eye, Clock, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +64,8 @@ const mockReports: Report[] = [
 export default function Reports() {
   const { toast } = useToast();
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   const getTypeBadge = (type: string) => {
     const variants: { [key: string]: "destructive" | "default" | "secondary" | "outline" } = {
@@ -98,6 +101,11 @@ export default function Reports() {
       title: "Downloading Report",
       description: `Report ${reportId} download started.`,
     });
+  };
+
+  const handleViewReport = (report: Report) => {
+    setSelectedReport(report);
+    setDetailsDialogOpen(true);
   };
 
   const filteredReports = mockReports.filter(report => {
@@ -238,6 +246,13 @@ export default function Reports() {
                   
                   <div className="flex gap-2">
                     <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleViewReport(report)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => handleGenerateReport(report.id)}
@@ -260,6 +275,86 @@ export default function Reports() {
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Report Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Report Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about the report
+            </DialogDescription>
+          </DialogHeader>
+          {selectedReport && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Report ID</p>
+                  <p className="font-medium">{selectedReport.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Report Type</p>
+                  <div className="mt-1">
+                    {getTypeBadge(selectedReport.type)}
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Report Name</p>
+                  <p className="font-medium">{selectedReport.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Format</p>
+                  <p className="font-medium">{selectedReport.format}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">File Size</p>
+                  <p className="font-medium">{selectedReport.size}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Generation Frequency</p>
+                  <div className="mt-1">
+                    {getFrequencyBadge(selectedReport.frequency)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Last Generated</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedReport.lastGenerated}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Description</p>
+                <p className="text-sm">{selectedReport.description}</p>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Report Contents</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Executive summary</p>
+                  <p>• Key metrics and statistics</p>
+                  <p>• Detailed findings</p>
+                  <p>• Recommendations</p>
+                  <p>• Trend analysis</p>
+                  <p>• Historical comparisons</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Delivery Options</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Email to: compliance@company.com</p>
+                  <p>• Automatic generation: {selectedReport.frequency}</p>
+                  <p>• Retention: 90 days</p>
+                  <p>• Access: Admin, Analyst roles</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
