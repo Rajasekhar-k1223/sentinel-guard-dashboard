@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AlertCircle, Clock, CheckCircle, User, FileText, Play } from 'lucide-react';
+import { AlertCircle, Clock, CheckCircle, User, FileText, Play, Eye, Shield, Activity } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +64,8 @@ export default function IncidentResponse() {
   const { toast } = useToast();
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   const getSeverityBadge = (severity: string) => {
     const variants: { [key: string]: "destructive" | "default" | "secondary" | "outline" } = {
@@ -96,6 +99,11 @@ export default function IncidentResponse() {
         {labels[status] || status.toUpperCase()}
       </Badge>
     );
+  };
+
+  const handleViewIncident = (incident: Incident) => {
+    setSelectedIncident(incident);
+    setDetailsDialogOpen(true);
   };
 
   const filteredIncidents = mockIncidents.filter(incident => {
@@ -252,8 +260,8 @@ export default function IncidentResponse() {
                     <Play className="h-3 w-3" />
                     Run Playbook
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <FileText className="h-3 w-3" />
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => handleViewIncident(incident)}>
+                    <Eye className="h-3 w-3" />
                     View Details
                   </Button>
                   <Button variant="outline" size="sm">
@@ -265,6 +273,134 @@ export default function IncidentResponse() {
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Incident Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Incident Details</DialogTitle>
+            <DialogDescription>
+              Comprehensive incident response information
+            </DialogDescription>
+          </DialogHeader>
+          {selectedIncident && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Incident ID</p>
+                  <p className="font-medium">{selectedIncident.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Category</p>
+                  <p className="font-medium">{selectedIncident.category}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Title</p>
+                  <p className="font-medium text-lg">{selectedIncident.title}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Severity</p>
+                  <div className="mt-1">
+                    {getSeverityBadge(selectedIncident.severity)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <div className="mt-1">
+                    {getStatusBadge(selectedIncident.status)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Assigned To</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    {selectedIncident.assignee}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Created</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedIncident.createdAt}
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Last Updated</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedIncident.updatedAt}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Description</p>
+                <p className="text-sm bg-muted p-3 rounded">{selectedIncident.description}</p>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Affected Assets ({selectedIncident.affectedAssets.length})</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedIncident.affectedAssets.map((asset, idx) => (
+                    <Badge key={idx} variant="outline">{asset}</Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Timeline</h4>
+                <div className="text-sm space-y-2">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-success mt-0.5" />
+                    <div>
+                      <p className="font-medium">Incident Created</p>
+                      <p className="text-muted-foreground text-xs">{selectedIncident.createdAt}</p>
+                    </div>
+                  </div>
+                  {selectedIncident.status !== 'open' && (
+                    <div className="flex items-start gap-2">
+                      <Activity className="h-4 w-4 text-warning mt-0.5" />
+                      <div>
+                        <p className="font-medium">Investigation Started</p>
+                        <p className="text-muted-foreground text-xs">{selectedIncident.updatedAt}</p>
+                      </div>
+                    </div>
+                  )}
+                  {selectedIncident.status === 'resolved' && (
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-success mt-0.5" />
+                      <div>
+                        <p className="font-medium">Incident Resolved</p>
+                        <p className="text-muted-foreground text-xs">{selectedIncident.updatedAt}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Response Actions</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Containment measures applied</p>
+                  <p>• Evidence collected and preserved</p>
+                  <p>• Root cause analysis in progress</p>
+                  <p>• Stakeholders notified</p>
+                  <p>• Recovery plan initiated</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-sm text-muted-foreground">
+                  TODO: EMAIL NOTIFICATION - Incident updates sent to: {selectedIncident.assignee}, security-team@company.com
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Backend API: POST /api/incidents/{selectedIncident.id}/notify
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

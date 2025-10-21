@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Users, Plus, Edit, Trash2, Shield, Mail, Phone, Search, Filter } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Shield, Mail, Phone, Search, Filter, Eye, Clock, Building } from 'lucide-react';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
@@ -72,6 +72,8 @@ export default function UserManagement() {
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   const getRoleBadge = (role: string) => {
     const variants: { [key: string]: "destructive" | "default" | "secondary" | "outline" } = {
@@ -123,6 +125,11 @@ export default function UserManagement() {
       description: `User ${userId} has been deleted.`,
       variant: "destructive",
     });
+  };
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setDetailsDialogOpen(true);
   };
 
   const userStats = {
@@ -327,6 +334,9 @@ export default function UserManagement() {
                   {getStatusBadge(user.status)}
                   
                   <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => handleViewUser(user)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="sm">
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -344,6 +354,118 @@ export default function UserManagement() {
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* User Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>
+              Comprehensive user account information
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">User ID</p>
+                  <p className="font-medium">{selectedUser.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Full Name</p>
+                  <p className="font-medium">{selectedUser.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    {selectedUser.email}
+                  </p>
+                </div>
+                {selectedUser.phone && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="font-medium flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      {selectedUser.phone}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-muted-foreground">Department</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Building className="h-3 w-3" />
+                    {selectedUser.department}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Role</p>
+                  <div className="mt-1">
+                    {getRoleBadge(selectedUser.role)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <div className="mt-1">
+                    {getStatusBadge(selectedUser.status)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Created</p>
+                  <p className="font-medium">{selectedUser.createdAt}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Last Login</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedUser.lastLogin}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Permissions & Access</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  {selectedUser.role === 'admin' && (
+                    <>
+                      <p>• Full system access</p>
+                      <p>• User management</p>
+                      <p>• Configuration changes</p>
+                      <p>• Audit log access</p>
+                    </>
+                  )}
+                  {selectedUser.role === 'analyst' && (
+                    <>
+                      <p>• View all security alerts</p>
+                      <p>• Manage incidents</p>
+                      <p>• Run scans and reports</p>
+                      <p>• Read-only configuration</p>
+                    </>
+                  )}
+                  {selectedUser.role === 'viewer' && (
+                    <>
+                      <p>• View dashboard</p>
+                      <p>• Read-only access to alerts</p>
+                      <p>• View reports</p>
+                      <p>• No configuration access</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Activity Summary</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Login count (30 days): 47</p>
+                  <p>• Actions performed: 156</p>
+                  <p>• Alerts reviewed: 89</p>
+                  <p>• Reports generated: 12</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

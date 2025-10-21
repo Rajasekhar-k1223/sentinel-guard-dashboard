@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FileText, Search, Filter, Download, User, Activity, Shield, Database } from 'lucide-react';
+import { FileText, Search, Filter, Download, User, Activity, Shield, Database, Eye, Clock, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -80,6 +81,8 @@ export default function AuditLogs() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -102,6 +105,11 @@ export default function AuditLogs() {
         {status.toUpperCase()}
       </Badge>
     );
+  };
+
+  const handleViewLog = (log: AuditLog) => {
+    setSelectedLog(log);
+    setDetailsDialogOpen(true);
   };
 
   const filteredLogs = mockLogs.filter(log => {
@@ -262,8 +270,8 @@ export default function AuditLogs() {
                 
                 <div className="flex items-center gap-3">
                   {getStatusBadge(log.status)}
-                  <Button variant="ghost" size="sm">
-                    <FileText className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" onClick={() => handleViewLog(log)}>
+                    <Eye className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -271,6 +279,92 @@ export default function AuditLogs() {
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Audit Log Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Audit Log Details</DialogTitle>
+            <DialogDescription>
+              Detailed audit trail information
+            </DialogDescription>
+          </DialogHeader>
+          {selectedLog && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Log ID</p>
+                  <p className="font-medium">{selectedLog.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Timestamp</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedLog.timestamp}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">User</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    {selectedLog.user}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">IP Address</p>
+                  <p className="font-medium">{selectedLog.ip}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Action</p>
+                  <p className="font-medium">{selectedLog.action}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Category</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {getCategoryIcon(selectedLog.category)}
+                    <span className="text-sm">{selectedLog.category.replace('_', ' ')}</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Resource</p>
+                  <p className="font-medium">{selectedLog.resource}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <div className="mt-1">
+                    {getStatusBadge(selectedLog.status)}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Details</p>
+                <p className="text-sm bg-muted p-3 rounded">{selectedLog.details}</p>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Security Context</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Session ID: sess_1234567890abcdef</p>
+                  <p>• User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)</p>
+                  <p>• Authentication Method: Password</p>
+                  <p>• Geolocation: {selectedLog.ip.startsWith('192.168') ? 'Internal Network' : 'External'}</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Compliance</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Retention period: 365 days</p>
+                  <p>• Regulatory: SOC 2, ISO 27001</p>
+                  <p>• Tamper-proof: Yes</p>
+                  <p>• Exportable: Yes</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

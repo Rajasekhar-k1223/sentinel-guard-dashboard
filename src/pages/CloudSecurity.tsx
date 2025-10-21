@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Cloud, Shield, AlertTriangle, CheckCircle, Settings, ExternalLink } from 'lucide-react';
+import { Cloud, Shield, AlertTriangle, CheckCircle, Settings, ExternalLink, Eye, Clock, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -124,6 +125,8 @@ const cloudStats: CloudStats = {
 export default function CloudSecurity() {
   const [selectedProvider, setSelectedProvider] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedResource, setSelectedResource] = useState<CloudResource | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -168,6 +171,11 @@ export default function CloudSecurity() {
 
   const getProviderIcon = (provider: string) => {
     return <Cloud className="h-4 w-4" />;
+  };
+
+  const handleViewResource = (resource: CloudResource) => {
+    setSelectedResource(resource);
+    setDetailsDialogOpen(true);
   };
 
   const filteredResources = mockCloudResources.filter(resource => {
@@ -327,6 +335,9 @@ export default function CloudSecurity() {
                   
                   {getStatusBadge(resource.status)}
                   
+                  <Button variant="ghost" size="sm" onClick={() => handleViewResource(resource)}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="sm">
                     <ExternalLink className="h-4 w-4" />
                   </Button>
@@ -336,6 +347,104 @@ export default function CloudSecurity() {
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Cloud Resource Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Cloud Resource Details</DialogTitle>
+            <DialogDescription>
+              Detailed cloud security information
+            </DialogDescription>
+          </DialogHeader>
+          {selectedResource && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Resource ID</p>
+                  <p className="font-medium">{selectedResource.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Resource Name</p>
+                  <p className="font-medium">{selectedResource.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Type</p>
+                  <p className="font-medium capitalize">{selectedResource.type}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Provider</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Cloud className="h-3 w-3" />
+                    {selectedResource.provider.toUpperCase()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Region</p>
+                  <p className="font-medium">{selectedResource.region}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <div className="mt-1">
+                    {getStatusBadge(selectedResource.status)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Security Issues</p>
+                  <p className="font-medium text-lg">{selectedResource.issues}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Compliance Score</p>
+                  <p className="font-medium text-lg">{selectedResource.compliance}%</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Last Scan</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedResource.lastScan}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Security Findings</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  {selectedResource.issues > 0 ? (
+                    <>
+                      <p>• {selectedResource.issues} security issues detected</p>
+                      <p>• Encryption not enabled</p>
+                      <p>• Public access configured</p>
+                      <p>• Missing security groups</p>
+                    </>
+                  ) : (
+                    <p>• No security issues detected</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Recommendations</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Enable encryption at rest</p>
+                  <p>• Review public access settings</p>
+                  <p>• Apply security group rules</p>
+                  <p>• Enable logging and monitoring</p>
+                  <p>• Implement least privilege access</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Compliance Status</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• CIS Benchmark: {selectedResource.compliance >= 90 ? 'Pass' : 'Fail'}</p>
+                  <p>• Security Best Practices: {selectedResource.compliance >= 80 ? 'Pass' : 'Fail'}</p>
+                  <p>• Regulatory Requirements: {selectedResource.compliance >= 100 ? 'Pass' : 'Review Needed'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Compliance Checks */}
       <SecurityCard>

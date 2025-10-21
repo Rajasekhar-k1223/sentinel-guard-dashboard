@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Monitor, Plus, MoreHorizontal, CheckCircle, AlertCircle, XCircle, Eye } from 'lucide-react';
+import { Monitor, Plus, MoreHorizontal, CheckCircle, AlertCircle, XCircle, Eye, Mail, Clock, Activity } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
 import { SecurityCard, SecurityCardHeader, SecurityCardTitle, SecurityCardContent } from '@/components/ui/security-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,6 +66,8 @@ export default function AgentManagement() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -89,6 +93,13 @@ export default function AgentManagement() {
         {status.toUpperCase()}
       </Badge>
     );
+  };
+
+  const handleViewDetails = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setDetailsDialogOpen(true);
+    // TODO: EMAIL NOTIFICATION - Send agent status report to owner: agent-owner@company.com
+    // Backend API: POST /api/agents/${agent.id}/notify-owner
   };
 
   const filteredAgents = mockAgents.filter(agent => {
@@ -238,7 +249,7 @@ export default function AgentManagement() {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={() => navigate(`/agent/${agent.id}`)}
+                    onClick={() => handleViewDetails(agent)}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
@@ -252,6 +263,89 @@ export default function AgentManagement() {
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Agent Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Agent Details</DialogTitle>
+            <DialogDescription>
+              Comprehensive information about the selected agent
+            </DialogDescription>
+          </DialogHeader>
+          {selectedAgent && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Agent ID</p>
+                  <p className="font-medium">{selectedAgent.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Hostname</p>
+                  <p className="font-medium">{selectedAgent.hostname}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Operating System</p>
+                  <p className="font-medium">{selectedAgent.os}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">IP Address</p>
+                  <p className="font-medium">{selectedAgent.ip}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Agent Version</p>
+                  <p className="font-medium">v{selectedAgent.version}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <div className="mt-1">
+                    {getStatusBadge(selectedAgent.status)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Last Seen</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedAgent.lastSeen}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Events</p>
+                  <p className="font-medium flex items-center gap-1">
+                    <Activity className="h-3 w-3" />
+                    {selectedAgent.events.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Recent Activity</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• Last heartbeat: {selectedAgent.lastSeen}</p>
+                  <p>• Health check: Passed</p>
+                  <p>• Configuration: Up to date</p>
+                  <p>• Next scheduled scan: In 2 hours</p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => {
+                  toast({
+                    title: "Email Sent",
+                    description: `Status report sent to agent owner`,
+                  });
+                }}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Email Owner
+                </Button>
+                <Button onClick={() => navigate(`/agent/${selectedAgent.id}`)}>
+                  Full Details
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

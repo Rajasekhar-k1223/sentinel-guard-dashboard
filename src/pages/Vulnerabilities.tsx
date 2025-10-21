@@ -102,6 +102,9 @@ export default function Vulnerabilities() {
   const [scanDialogOpen, setScanDialogOpen] = useState(false);
   const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
   const [scanType, setScanType] = useState('full');
+  const [patchDialogOpen, setPatchDialogOpen] = useState(false);
+  const [patchingVuln, setPatchingVuln] = useState<Vulnerability | null>(null);
+  const [patchProgress, setPatchProgress] = useState(0);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -181,10 +184,26 @@ export default function Vulnerabilities() {
   };
 
   const handlePatchVulnerability = (vuln: Vulnerability) => {
-    toast({
-      title: "Patch Process Started",
-      description: `Initiating patch for ${vuln.cve} on ${vuln.affectedAssets.length} asset(s)`,
-    });
+    setPatchingVuln(vuln);
+    setPatchDialogOpen(true);
+    setPatchProgress(0);
+    
+    // Simulate patch progress
+    const interval = setInterval(() => {
+      setPatchProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          toast({
+            title: "Patch Completed",
+            description: `Successfully patched ${vuln.cve}`,
+          });
+          // TODO: EMAIL NOTIFICATION - Send patch completion to: security-admin@company.com
+          // Backend API: POST /api/vulnerabilities/${vuln.id}/notify-patched
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 500);
   };
 
   const handleDownloadPatch = (vuln: Vulnerability) => {
@@ -510,6 +529,59 @@ export default function Vulnerabilities() {
           </div>
         </SecurityCardContent>
       </SecurityCard>
+
+      {/* Patch Progress Dialog */}
+      <Dialog open={patchDialogOpen} onOpenChange={setPatchDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Patching Vulnerability</DialogTitle>
+            <DialogDescription>
+              Applying security patches to affected systems
+            </DialogDescription>
+          </DialogHeader>
+          {patchingVuln && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-1">{patchingVuln.cve}</p>
+                <p className="text-sm text-muted-foreground">{patchingVuln.title}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Patch Progress</span>
+                  <span>{patchProgress}%</span>
+                </div>
+                <Progress value={patchProgress} className="h-3" />
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-2">Affected Systems ({patchingVuln.affectedAssets.length})</h4>
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  {patchingVuln.affectedAssets.map((asset, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      {patchProgress > (idx + 1) * (100 / patchingVuln.affectedAssets.length) ? (
+                        <CheckCircle className="h-3 w-3 text-success" />
+                      ) : (
+                        <div className="h-3 w-3 border-2 border-muted rounded-full animate-pulse" />
+                      )}
+                      <span>{asset}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {patchProgress === 100 && (
+                <div className="bg-success/10 border border-success/20 rounded p-3">
+                  <p className="text-sm text-success font-medium">✓ Patch successfully applied to all systems</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email notification sent to security team
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
